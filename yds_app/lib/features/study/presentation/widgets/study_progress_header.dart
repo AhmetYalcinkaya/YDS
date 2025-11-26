@@ -20,7 +20,7 @@ class StudyProgressHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Bugünkü hedef: ${plan.dailyTarget} kelimes',
+            'Bugünkü hedef: ${plan.dailyTarget} kelime',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
