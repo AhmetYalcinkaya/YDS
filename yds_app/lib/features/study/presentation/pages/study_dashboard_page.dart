@@ -15,9 +15,7 @@ class StudyDashboardPage extends ConsumerWidget {
     final planState = ref.watch(studyPlanControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('YDS 1000 Kelime'),
-      ),
+      appBar: AppBar(title: const Text('YDS 1000 Kelime')),
       body: planState.when(
         data: (plan) => _DashboardBody(plan: plan),
         error: (error, _) => _ErrorState(message: error.toString()),
@@ -67,14 +65,10 @@ class _ErrorState extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-            ),
+            Text(message, textAlign: TextAlign.center),
           ],
         ),
       ),
     );
   }
 }
-

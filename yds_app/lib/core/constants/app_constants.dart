@@ -3,6 +3,5 @@ class AppConstants {
   AppConstants._();
 
   /// Günlük hedeflenen yeni kelime sayısı.
-  static const dailyNewWordTarget = 20;
+  static const dailyNewWordTarget = 30;
 }
-

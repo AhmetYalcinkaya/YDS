@@ -26,10 +26,10 @@ class YdsApp extends ConsumerWidget {
             return const LoginPage();
           }
         },
-        loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+        loading: () =>
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
         error: (e, st) => Scaffold(body: Center(child: Text('Error: $e'))),
       ),
     );
   }
 }
-

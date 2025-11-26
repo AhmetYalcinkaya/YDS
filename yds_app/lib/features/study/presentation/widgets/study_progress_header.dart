@@ -10,8 +10,9 @@ class StudyProgressHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progressRatio =
-        plan.dailyTarget == 0 ? 0.0 : plan.completedToday / plan.dailyTarget;
+    final progressRatio = plan.dailyTarget == 0
+        ? 0.0
+        : plan.completedToday / plan.dailyTarget;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -19,7 +20,7 @@ class StudyProgressHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Bugünkü hedef: ${plan.dailyTarget} kelime',
+            'Bugünkü hedef: ${plan.dailyTarget} kelimes',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
@@ -34,4 +35,3 @@ class StudyProgressHeader extends StatelessWidget {
     );
   }
 }
-

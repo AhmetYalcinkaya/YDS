@@ -23,14 +23,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
-      await ref.read(authControllerProvider.notifier).signUp(
+      await ref
+          .read(authControllerProvider.notifier)
+          .signUp(
             _emailController.text.trim(),
             _passwordController.text.trim(),
           );
       if (mounted) {
-         Navigator.of(context).pop(); // Go back to login after registration (or handle auto-login)
-         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful! Please login.')),
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Kayıt başarılı! Giriş yapabilirsiniz.'),
+          ),
         );
       }
     }
@@ -40,8 +44,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       if (next.hasError) {
+        final error = next.error.toString();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${next.error}')),
+          SnackBar(
+            content: Text('Kayıt Hatası: $error'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     });
@@ -49,7 +58,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(title: const Text('Kayıt Ol')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -59,10 +68,21 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'ornek@email.com',
+                ),
+                keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
+                    return 'Lütfen email adresinizi girin';
+                  }
+                  // Email format validation
+                  final emailRegex = RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  );
+                  if (!emailRegex.hasMatch(value)) {
+                    return 'Geçerli bir email girin (örn: kullanici@example.com)';
                   }
                   return null;
                 },
@@ -70,14 +90,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Password'),
+                decoration: const InputDecoration(labelText: 'Şifre'),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
+                    return 'Lütfen şifrenizi girin';
                   }
                   if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
+                    return 'Şifre en az 6 karakter olmalı';
                   }
                   return null;
                 },
@@ -88,7 +108,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               else
                 ElevatedButton(
                   onPressed: _register,
-                  child: const Text('Register'),
+                  child: const Text('Kayıt Ol'),
                 ),
             ],
           ),
