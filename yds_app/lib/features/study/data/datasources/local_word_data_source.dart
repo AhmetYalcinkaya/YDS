@@ -1,4 +1,4 @@
-import '../../domain/entities/study_word.dart';
+// import '../../domain/entities/study_word.dart';
 
 /// İlk prototip için Supabase yerine yerel mock veri kaynağı.
 // class LocalWordDataSource {
