@@ -1,66 +1,115 @@
 import 'package:flutter/material.dart';
-
 import '../../features/study/domain/entities/study_word.dart';
+import 'flip_card_widget.dart';
+import 'difficulty_rating_widget.dart';
 
-/// Kelime detaylarını kart olarak gösteren widget.
+/// Word card with flip animation and difficulty rating
 class WordCard extends StatelessWidget {
-  const WordCard({required this.word, super.key});
+  const WordCard({
+    required this.word,
+    required this.onDifficultySelected,
+    super.key,
+  });
 
   final StudyWord word;
+  final void Function(Difficulty difficulty) onDifficultySelected;
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
+      elevation: 4,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  word.english,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    word.partOfSpeech,
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ),
-              ],
+            FlipCardWidget(
+              frontChild: _buildFront(context),
+              backChild: _buildBack(context),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Kartı çevirmek için dokunun',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            DifficultyRatingWidget(onRatingSelected: onDifficultySelected),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFront(BuildContext context) {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              word.english,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              word.turkish,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              word.exampleSentence,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: word.masteryScore / 5,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              word.partOfSpeech,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onPrimaryContainer.withOpacity(0.7),
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
       ),
     );
   }
-}
 
+  Widget _buildBack(BuildContext context) {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            word.turkish,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (word.exampleSentence.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(
+              word.exampleSentence,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSecondaryContainer.withOpacity(0.8),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

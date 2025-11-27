@@ -4,6 +4,8 @@ import 'package:yds_app/core/constants/app_constants.dart';
 import '../../domain/entities/study_plan.dart';
 import '../../domain/entities/study_word.dart';
 import '../../domain/repositories/study_plan_repository.dart';
+import '../../domain/services/spaced_repetition_service.dart';
+import '../../../../shared/widgets/difficulty_rating_widget.dart';
 
 /// Yerel/mock veri kaynağı ile çalışan repository.
 class StudyPlanRepositoryImpl implements StudyPlanRepository {
@@ -90,5 +92,28 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
       dailyTarget: AppConstants.dailyNewWordTarget,
       completedToday: 0,
     );
+  }
+
+  @override
+  Future<void> updateProgress(String wordId, Difficulty difficulty) async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('User not logged in');
+    }
+
+    final nextReviewDate = SpacedRepetitionService.calculateNextReviewDate(
+      difficulty,
+    );
+
+    // Upsert user_progress
+    await _supabaseClient.from('user_progress').upsert({
+      'user_id': userId,
+      'word_id': wordId,
+      'next_review_date': nextReviewDate.toIso8601String(),
+      'interval': difficulty == Difficulty.easy
+          ? 4
+          : (difficulty == Difficulty.medium ? 2 : 1),
+      'ease_factor': 2.5, // Default ease factor
+    });
   }
 }
