@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yds_app/core/constants/app_constants.dart';
 
 import '../../domain/entities/study_plan.dart';
+import '../../domain/entities/study_statistics.dart';
 import '../../domain/entities/study_word.dart';
 import '../../domain/repositories/study_plan_repository.dart';
 import '../../domain/services/spaced_repetition_service.dart';
@@ -19,6 +20,17 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     if (userId == null) {
       throw Exception('User not logged in');
     }
+
+    // 0. Fetch user's daily target
+    final userResponse = await _supabaseClient
+        .from('users')
+        .select('daily_target')
+        .eq('id', userId)
+        .maybeSingle();
+
+    final dailyTarget =
+        (userResponse?['daily_target'] as int?) ??
+        AppConstants.dailyNewWordTarget;
 
     // 1. Fetch words due for review (where next_review_date <= now)
     final dueProgressResponse = await _supabaseClient
@@ -62,7 +74,7 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
 
     // 3. If we need more words to reach daily target, fetch new words
     List<StudyWord> newWords = [];
-    final neededCount = AppConstants.dailyNewWordTarget - dueWords.length;
+    final neededCount = dailyTarget - dueWords.length;
 
     // Fetch all progress word IDs to exclude
     final allProgressResponse = await _supabaseClient
@@ -80,8 +92,6 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
         .map((e) => e['user_word_id'] as String)
         .toList();
 
-    // Fetch new user words first (prioritize user's own words)
-    // Sort by created_at descending to show newest words first
     // Fetch new user words first (prioritize user's own words)
     var userWordsQuery = _supabaseClient.from('user_words').select();
 
@@ -131,7 +141,7 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
 
     return StudyPlan(
       dueWords: [...dueWords, ...newWords],
-      dailyTarget: AppConstants.dailyNewWordTarget,
+      dailyTarget: dailyTarget,
       completedToday: 0,
     );
   }
@@ -194,5 +204,140 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     } else {
       await _supabaseClient.from('user_progress').insert(data);
     }
+  }
+
+  @override
+  Future<StudyStatistics> getStatistics() async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('User not logged in');
+    }
+
+    // 1. Total words studied
+    final totalCountResponse = await _supabaseClient
+        .from('user_progress')
+        .select('id')
+        .eq('user_id', userId)
+        .count(CountOption.exact);
+    final totalWords = totalCountResponse.count;
+
+    // 2. Mastered words (interval > 14 days)
+    final masteredCountResponse = await _supabaseClient
+        .from('user_progress')
+        .select('id')
+        .eq('user_id', userId)
+        .gt('interval', 14)
+        .count(CountOption.exact);
+    final masteredWords = masteredCountResponse.count;
+
+    // 3. Learning words (total - mastered)
+    final learningWords = totalWords - masteredWords;
+
+    // 4. Streak (Placeholder for now)
+    const streakDays = 0;
+
+    return StudyStatistics(
+      totalWordsStudied: totalWords,
+      masteredWords: masteredWords,
+      learningWords: learningWords,
+      streakDays: streakDays,
+    );
+  }
+
+  @override
+  Future<void> updateDailyTarget(int target) async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('User not logged in');
+    }
+
+    // Check if user record exists
+    final existingUser = await _supabaseClient
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+
+    if (existingUser != null) {
+      await _supabaseClient
+          .from('users')
+          .update({'daily_target': target})
+          .eq('id', userId);
+    } else {
+      // Create user record if not exists (should exist from trigger, but safe fallback)
+      await _supabaseClient.from('users').insert({
+        'id': userId,
+        'daily_target': target,
+      });
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getUserProfile() async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    return await _supabaseClient
+        .from('users')
+        .select()
+        .eq('id', userId)
+        .maybeSingle();
+  }
+
+  @override
+  Future<List<StudyWord>> getWordsByStatus(WordStatus status) async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('User not logged in');
+    }
+
+    // 1. Get word IDs from user_progress based on status
+    var query = _supabaseClient
+        .from('user_progress')
+        .select('word_id, user_word_id')
+        .eq('user_id', userId);
+
+    if (status == WordStatus.mastered) {
+      query = query.gt('interval', 14);
+    } else if (status == WordStatus.learning) {
+      query = query.lte('interval', 14);
+    }
+
+    final progressResponse = await query;
+
+    final globalWordIds = (progressResponse as List)
+        .where((e) => e['word_id'] != null)
+        .map((e) => e['word_id'] as String)
+        .toList();
+
+    final userWordIds = (progressResponse)
+        .where((e) => e['user_word_id'] != null)
+        .map((e) => e['user_word_id'] as String)
+        .toList();
+
+    List<StudyWord> words = [];
+
+    // 2. Fetch word details
+    if (globalWordIds.isNotEmpty) {
+      final response = await _supabaseClient
+          .from('words')
+          .select()
+          .inFilter('id', globalWordIds);
+      words.addAll(
+        (response as List).map((data) => _mapToStudyWord(data, false)),
+      );
+    }
+
+    if (userWordIds.isNotEmpty) {
+      final response = await _supabaseClient
+          .from('user_words')
+          .select()
+          .inFilter('id', userWordIds);
+      words.addAll(
+        (response as List).map((data) => _mapToStudyWord(data, true)),
+      );
+    }
+
+    return words;
   }
 }

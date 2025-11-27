@@ -9,6 +9,7 @@ import '../providers/study_plan_controller.dart';
 import '../widgets/study_progress_header.dart';
 import '../widgets/word_list_view.dart';
 import '../../../../shared/widgets/difficulty_rating_widget.dart';
+import 'profile_page.dart';
 
 /// Ana çalışma ekranı; günlük hedef, ilerleme ve kelime kartlarını gösterir.
 class StudyDashboardPage extends ConsumerWidget {
@@ -27,11 +28,13 @@ class StudyDashboardPage extends ConsumerWidget {
         title: Text('Hoşgeldin, $userName'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await ref.read(authRepositoryProvider).signOut();
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
             },
-            tooltip: 'Çıkış Yap',
+            tooltip: 'Profil',
           ),
         ],
       ),
@@ -165,6 +168,8 @@ class StudyDashboardPage extends ConsumerWidget {
         const SnackBar(content: Text('Kelime başarıyla eklendi!')),
       );
     }
+
+    return result;
   }
 }
 
@@ -273,6 +278,14 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
     setState(() {
       _dailyTarget = newTarget;
     });
+
+    // Save to DB
+    try {
+      await ref.read(studyPlanRepositoryProvider).updateDailyTarget(newTarget);
+    } catch (e) {
+      // Ignore error or show snackbar
+      debugPrint('Error saving daily target: $e');
+    }
 
     // If target increased and we need more words, reload plan
     if (newTarget > _displayedWords.length + _completedToday) {

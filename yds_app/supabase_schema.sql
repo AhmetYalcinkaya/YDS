@@ -25,6 +25,7 @@ create table public.user_words (
 create table public.users (
   id uuid not null references auth.users (id) on delete cascade,
   display_name text null,
+  daily_target integer not null default 10,
   created_at timestamp with time zone not null default now(),
   constraint users_pkey primary key (id)
 );
