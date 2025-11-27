@@ -27,6 +27,7 @@ mixin _$StudyWord {
   String get partOfSpeech => throw _privateConstructorUsedError;
   String get exampleSentence => throw _privateConstructorUsedError;
   int get masteryScore => throw _privateConstructorUsedError;
+  bool get isUserWord => throw _privateConstructorUsedError;
 
   /// Serializes this StudyWord to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -50,6 +51,7 @@ abstract class $StudyWordCopyWith<$Res> {
     String partOfSpeech,
     String exampleSentence,
     int masteryScore,
+    bool isUserWord,
   });
 }
 
@@ -74,6 +76,7 @@ class _$StudyWordCopyWithImpl<$Res, $Val extends StudyWord>
     Object? partOfSpeech = null,
     Object? exampleSentence = null,
     Object? masteryScore = null,
+    Object? isUserWord = null,
   }) {
     return _then(
       _value.copyWith(
@@ -101,6 +104,10 @@ class _$StudyWordCopyWithImpl<$Res, $Val extends StudyWord>
                 ? _value.masteryScore
                 : masteryScore // ignore: cast_nullable_to_non_nullable
                       as int,
+            isUserWord: null == isUserWord
+                ? _value.isUserWord
+                : isUserWord // ignore: cast_nullable_to_non_nullable
+                      as bool,
           )
           as $Val,
     );
@@ -123,6 +130,7 @@ abstract class _$$StudyWordImplCopyWith<$Res>
     String partOfSpeech,
     String exampleSentence,
     int masteryScore,
+    bool isUserWord,
   });
 }
 
@@ -146,6 +154,7 @@ class __$$StudyWordImplCopyWithImpl<$Res>
     Object? partOfSpeech = null,
     Object? exampleSentence = null,
     Object? masteryScore = null,
+    Object? isUserWord = null,
   }) {
     return _then(
       _$StudyWordImpl(
@@ -173,6 +182,10 @@ class __$$StudyWordImplCopyWithImpl<$Res>
             ? _value.masteryScore
             : masteryScore // ignore: cast_nullable_to_non_nullable
                   as int,
+        isUserWord: null == isUserWord
+            ? _value.isUserWord
+            : isUserWord // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -188,6 +201,7 @@ class _$StudyWordImpl implements _StudyWord {
     required this.partOfSpeech,
     required this.exampleSentence,
     this.masteryScore = 0,
+    this.isUserWord = false,
   });
 
   factory _$StudyWordImpl.fromJson(Map<String, dynamic> json) =>
@@ -206,10 +220,13 @@ class _$StudyWordImpl implements _StudyWord {
   @override
   @JsonKey()
   final int masteryScore;
+  @override
+  @JsonKey()
+  final bool isUserWord;
 
   @override
   String toString() {
-    return 'StudyWord(id: $id, english: $english, turkish: $turkish, partOfSpeech: $partOfSpeech, exampleSentence: $exampleSentence, masteryScore: $masteryScore)';
+    return 'StudyWord(id: $id, english: $english, turkish: $turkish, partOfSpeech: $partOfSpeech, exampleSentence: $exampleSentence, masteryScore: $masteryScore, isUserWord: $isUserWord)';
   }
 
   @override
@@ -225,7 +242,9 @@ class _$StudyWordImpl implements _StudyWord {
             (identical(other.exampleSentence, exampleSentence) ||
                 other.exampleSentence == exampleSentence) &&
             (identical(other.masteryScore, masteryScore) ||
-                other.masteryScore == masteryScore));
+                other.masteryScore == masteryScore) &&
+            (identical(other.isUserWord, isUserWord) ||
+                other.isUserWord == isUserWord));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -238,6 +257,7 @@ class _$StudyWordImpl implements _StudyWord {
     partOfSpeech,
     exampleSentence,
     masteryScore,
+    isUserWord,
   );
 
   /// Create a copy of StudyWord
@@ -262,6 +282,7 @@ abstract class _StudyWord implements StudyWord {
     required final String partOfSpeech,
     required final String exampleSentence,
     final int masteryScore,
+    final bool isUserWord,
   }) = _$StudyWordImpl;
 
   factory _StudyWord.fromJson(Map<String, dynamic> json) =
@@ -279,6 +300,8 @@ abstract class _StudyWord implements StudyWord {
   String get exampleSentence;
   @override
   int get masteryScore;
+  @override
+  bool get isUserWord;
 
   /// Create a copy of StudyWord
   /// with the given fields replaced by the non-null parameter values.

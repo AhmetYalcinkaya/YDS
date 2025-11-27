@@ -13,9 +13,9 @@ class StudyWord with _$StudyWord {
     required String partOfSpeech,
     required String exampleSentence,
     @Default(0) int masteryScore,
+    @Default(false) bool isUserWord,
   }) = _StudyWord;
 
-  factory StudyWord.fromJson(Map<String, dynamic> json) => _$StudyWordFromJson(json);
+  factory StudyWord.fromJson(Map<String, dynamic> json) =>
+      _$StudyWordFromJson(json);
 }
-
-

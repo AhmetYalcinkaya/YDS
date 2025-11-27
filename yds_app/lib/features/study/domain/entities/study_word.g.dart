@@ -14,6 +14,7 @@ _$StudyWordImpl _$$StudyWordImplFromJson(Map<String, dynamic> json) =>
       partOfSpeech: json['partOfSpeech'] as String,
       exampleSentence: json['exampleSentence'] as String,
       masteryScore: (json['masteryScore'] as num?)?.toInt() ?? 0,
+      isUserWord: json['isUserWord'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$StudyWordImplToJson(_$StudyWordImpl instance) =>
@@ -24,4 +25,5 @@ Map<String, dynamic> _$$StudyWordImplToJson(_$StudyWordImpl instance) =>
       'partOfSpeech': instance.partOfSpeech,
       'exampleSentence': instance.exampleSentence,
       'masteryScore': instance.masteryScore,
+      'isUserWord': instance.isUserWord,
     };

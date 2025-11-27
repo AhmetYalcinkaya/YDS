@@ -23,79 +23,129 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     // 1. Fetch words due for review (where next_review_date <= now)
     final dueProgressResponse = await _supabaseClient
         .from('user_progress')
-        .select('word_id')
+        .select('word_id, user_word_id')
         .eq('user_id', userId)
         .lte('next_review_date', DateTime.now().toIso8601String());
 
-    final dueWordIds = (dueProgressResponse as List)
+    final dueGlobalWordIds = (dueProgressResponse as List)
+        .where((e) => e['word_id'] != null)
         .map((e) => e['word_id'] as String)
         .toList();
 
-    // 2. If we need more words to reach daily target, fetch new words
-    // For simplicity, we'll just fetch random words that are NOT in user_progress
-    // In a real app, we'd want a more sophisticated selection strategy
+    final dueUserWordIds = (dueProgressResponse)
+        .where((e) => e['user_word_id'] != null)
+        .map((e) => e['user_word_id'] as String)
+        .toList();
 
-    List<Map<String, dynamic>> newWordsData = [];
-    if (dueWordIds.length < AppConstants.dailyNewWordTarget) {
-      // Fetch all progress word IDs to exclude
-      final allProgressResponse = await _supabaseClient
-          .from('user_progress')
-          .select('word_id')
-          .eq('user_id', userId);
-      final allProgressWordIds = (allProgressResponse as List)
-          .map((e) => e['word_id'] as String)
-          .toList();
+    // 2. Fetch details for due words
+    List<StudyWord> dueWords = [];
 
-      final limit = AppConstants.dailyNewWordTarget - dueWordIds.length;
-
-      // Supabase doesn't have a simple "not in" for large lists or "random" easily exposed via client without RPC
-      // For this MVP, we'll fetch a batch of words and filter client-side or use a simple range if IDs were integers.
-      // Since IDs are UUIDs, we can't do range.
-      // We will fetch words where id is NOT in allProgressWordIds.
-
-      var query = _supabaseClient.from('words').select();
-      if (allProgressWordIds.isNotEmpty) {
-        query = query.not('id', 'in', '(${allProgressWordIds.join(',')})');
-      }
-
-      final response = await query.limit(limit);
-      newWordsData = List<Map<String, dynamic>>.from(response);
-    }
-
-    // 3. Fetch details for due words
-    List<Map<String, dynamic>> dueWordsData = [];
-    if (dueWordIds.isNotEmpty) {
+    if (dueGlobalWordIds.isNotEmpty) {
       final response = await _supabaseClient
           .from('words')
           .select()
-          .inFilter('id', dueWordIds);
-      dueWordsData = List<Map<String, dynamic>>.from(response);
+          .inFilter('id', dueGlobalWordIds);
+      dueWords.addAll(
+        (response as List).map((data) => _mapToStudyWord(data, false)),
+      );
     }
 
-    final allWordsData = [...dueWordsData, ...newWordsData];
+    if (dueUserWordIds.isNotEmpty) {
+      final response = await _supabaseClient
+          .from('user_words')
+          .select()
+          .inFilter('id', dueUserWordIds);
+      dueWords.addAll(
+        (response as List).map((data) => _mapToStudyWord(data, true)),
+      );
+    }
 
-    final words = allWordsData
-        .map(
-          (data) => StudyWord(
-            id: data['id'] as String,
-            english: data['english'] as String,
-            turkish: data['turkish'] as String,
-            partOfSpeech: (data['part_of_speech'] as String?) ?? 'noun',
-            exampleSentence: (data['example_sentence'] as String?) ?? '',
-            masteryScore: 0,
-          ),
-        )
-        .toList();
+    // 3. If we need more words to reach daily target, fetch new words
+    List<StudyWord> newWords = [];
+    final neededCount = AppConstants.dailyNewWordTarget - dueWords.length;
+
+    if (neededCount > 0) {
+      // Fetch all progress word IDs to exclude
+      final allProgressResponse = await _supabaseClient
+          .from('user_progress')
+          .select('word_id, user_word_id')
+          .eq('user_id', userId);
+
+      final excludeGlobalIds = (allProgressResponse as List)
+          .where((e) => e['word_id'] != null)
+          .map((e) => e['word_id'] as String)
+          .toList();
+
+      final excludeUserIds = (allProgressResponse)
+          .where((e) => e['user_word_id'] != null)
+          .map((e) => e['user_word_id'] as String)
+          .toList();
+
+      // Fetch new user words first (prioritize user's own words)
+      var userWordsQuery = _supabaseClient.from('user_words').select();
+      if (excludeUserIds.isNotEmpty) {
+        // Note: Supabase filter for 'not in' with list of UUIDs can be tricky if list is empty or large
+        // Using a simple workaround: filter client side if list is small, or use proper filter string
+        userWordsQuery = userWordsQuery.not(
+          'id',
+          'in',
+          '(${excludeUserIds.join(',')})',
+        );
+      }
+      final newUserWordsResponse = await userWordsQuery.limit(neededCount);
+      final newUserWords = (newUserWordsResponse as List)
+          .map((data) => _mapToStudyWord(data, true))
+          .toList();
+
+      newWords.addAll(newUserWords);
+
+      // If still need more, fetch global words
+      final remainingCount = neededCount - newWords.length;
+      if (remainingCount > 0) {
+        var globalWordsQuery = _supabaseClient.from('words').select();
+        if (excludeGlobalIds.isNotEmpty) {
+          globalWordsQuery = globalWordsQuery.not(
+            'id',
+            'in',
+            '(${excludeGlobalIds.join(',')})',
+          );
+        }
+        final newGlobalWordsResponse = await globalWordsQuery.limit(
+          remainingCount,
+        );
+        final newGlobalWords = (newGlobalWordsResponse as List)
+            .map((data) => _mapToStudyWord(data, false))
+            .toList();
+
+        newWords.addAll(newGlobalWords);
+      }
+    }
 
     return StudyPlan(
-      dueWords: words,
+      dueWords: [...dueWords, ...newWords],
       dailyTarget: AppConstants.dailyNewWordTarget,
       completedToday: 0,
     );
   }
 
+  StudyWord _mapToStudyWord(Map<String, dynamic> data, bool isUserWord) {
+    return StudyWord(
+      id: data['id'] as String,
+      english: data['english'] as String,
+      turkish: data['turkish'] as String,
+      partOfSpeech: (data['part_of_speech'] as String?) ?? 'noun',
+      exampleSentence: (data['example_sentence'] as String?) ?? '',
+      masteryScore: 0,
+      isUserWord: isUserWord,
+    );
+  }
+
   @override
-  Future<void> updateProgress(String wordId, Difficulty difficulty) async {
+  Future<void> updateProgress(
+    String wordId,
+    Difficulty difficulty, {
+    bool isUserWord = false,
+  }) async {
     final userId = _supabaseClient.auth.currentUser?.id;
     if (userId == null) {
       throw Exception('User not logged in');
@@ -105,15 +155,36 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
       difficulty,
     );
 
-    // Upsert user_progress
-    await _supabaseClient.from('user_progress').upsert({
+    final data = {
       'user_id': userId,
-      'word_id': wordId,
       'next_review_date': nextReviewDate.toIso8601String(),
       'interval': difficulty == Difficulty.easy
           ? 4
           : (difficulty == Difficulty.medium ? 2 : 1),
-      'ease_factor': 2.5, // Default ease factor
-    });
+      'ease_factor': 2.5,
+    };
+
+    if (isUserWord) {
+      data['user_word_id'] = wordId;
+    } else {
+      data['word_id'] = wordId;
+    }
+
+    // Check if record exists
+    final existing = await _supabaseClient
+        .from('user_progress')
+        .select('id')
+        .eq('user_id', userId)
+        .eq(isUserWord ? 'user_word_id' : 'word_id', wordId)
+        .maybeSingle();
+
+    if (existing != null) {
+      await _supabaseClient
+          .from('user_progress')
+          .update(data)
+          .eq('id', existing['id']);
+    } else {
+      await _supabaseClient.from('user_progress').insert(data);
+    }
   }
 }
