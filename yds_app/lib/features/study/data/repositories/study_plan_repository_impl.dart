@@ -22,15 +22,20 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     }
 
     // 0. Fetch user's daily target
-    final userResponse = await _supabaseClient
-        .from('users')
-        .select('daily_target')
-        .eq('id', userId)
-        .maybeSingle();
+    int dailyTarget = AppConstants.dailyNewWordTarget;
+    try {
+      final userResponse = await _supabaseClient
+          .from('users')
+          .select('daily_target')
+          .eq('id', userId)
+          .maybeSingle();
 
-    final dailyTarget =
-        (userResponse?['daily_target'] as int?) ??
-        AppConstants.dailyNewWordTarget;
+      if (userResponse != null && userResponse['daily_target'] != null) {
+        dailyTarget = userResponse['daily_target'] as int;
+      }
+    } catch (e) {
+      // Ignore error and use default
+    }
 
     // 1. Fetch words due for review (where next_review_date <= now)
     final dueProgressResponse = await _supabaseClient
@@ -148,9 +153,9 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
 
   StudyWord _mapToStudyWord(Map<String, dynamic> data, bool isUserWord) {
     return StudyWord(
-      id: data['id'] as String,
-      english: data['english'] as String,
-      turkish: data['turkish'] as String,
+      id: (data['id'] as String?) ?? '',
+      english: (data['english'] as String?) ?? '',
+      turkish: (data['turkish'] as String?) ?? '',
       partOfSpeech: (data['part_of_speech'] as String?) ?? 'noun',
       exampleSentence: (data['example_sentence'] as String?) ?? '',
       masteryScore: 0,
@@ -339,5 +344,33 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     }
 
     return words;
+  }
+
+  @override
+  Future<void> deleteUserWord(String id) async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) return;
+
+    await _supabaseClient
+        .from('user_words')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+  }
+
+  @override
+  Future<void> updateUserWord(StudyWord word) async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) return;
+
+    await _supabaseClient
+        .from('user_words')
+        .update({
+          'english': word.english,
+          'turkish': word.turkish,
+          'example_sentence': word.exampleSentence,
+        })
+        .eq('id', word.id)
+        .eq('user_id', userId);
   }
 }

@@ -17,6 +17,8 @@ abstract class StudyPlanRepository {
   Future<void> updateDailyTarget(int target);
   Future<Map<String, dynamic>?> getUserProfile();
   Future<List<StudyWord>> getWordsByStatus(WordStatus status);
+  Future<void> deleteUserWord(String id);
+  Future<void> updateUserWord(StudyWord word);
 }
 
 enum WordStatus { all, mastered, learning }
