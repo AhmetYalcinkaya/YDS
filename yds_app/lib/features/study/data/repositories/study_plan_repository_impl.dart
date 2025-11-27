@@ -64,61 +64,69 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     List<StudyWord> newWords = [];
     final neededCount = AppConstants.dailyNewWordTarget - dueWords.length;
 
-    if (neededCount > 0) {
-      // Fetch all progress word IDs to exclude
-      final allProgressResponse = await _supabaseClient
-          .from('user_progress')
-          .select('word_id, user_word_id')
-          .eq('user_id', userId);
+    // Fetch all progress word IDs to exclude
+    final allProgressResponse = await _supabaseClient
+        .from('user_progress')
+        .select('word_id, user_word_id')
+        .eq('user_id', userId);
 
-      final excludeGlobalIds = (allProgressResponse as List)
-          .where((e) => e['word_id'] != null)
-          .map((e) => e['word_id'] as String)
-          .toList();
+    final excludeGlobalIds = (allProgressResponse as List)
+        .where((e) => e['word_id'] != null)
+        .map((e) => e['word_id'] as String)
+        .toList();
 
-      final excludeUserIds = (allProgressResponse)
-          .where((e) => e['user_word_id'] != null)
-          .map((e) => e['user_word_id'] as String)
-          .toList();
+    final excludeUserIds = (allProgressResponse)
+        .where((e) => e['user_word_id'] != null)
+        .map((e) => e['user_word_id'] as String)
+        .toList();
 
-      // Fetch new user words first (prioritize user's own words)
-      var userWordsQuery = _supabaseClient.from('user_words').select();
-      if (excludeUserIds.isNotEmpty) {
-        // Note: Supabase filter for 'not in' with list of UUIDs can be tricky if list is empty or large
-        // Using a simple workaround: filter client side if list is small, or use proper filter string
-        userWordsQuery = userWordsQuery.not(
+    // Fetch new user words first (prioritize user's own words)
+    // Sort by created_at descending to show newest words first
+    // Fetch new user words first (prioritize user's own words)
+    var userWordsQuery = _supabaseClient.from('user_words').select();
+
+    if (excludeUserIds.isNotEmpty) {
+      userWordsQuery = userWordsQuery.not(
+        'id',
+        'in',
+        '(${excludeUserIds.join(',')})',
+      );
+    }
+
+    // Sort by created_at descending to show newest words first
+    final userWordsOrdered = userWordsQuery.order(
+      'created_at',
+      ascending: false,
+    );
+
+    // Always fetch at least 5 newest user words if available, or fill neededCount
+    final fetchCount = neededCount > 0 ? neededCount : 5;
+    final newUserWordsResponse = await userWordsOrdered.limit(fetchCount);
+    final newUserWords = (newUserWordsResponse as List)
+        .map((data) => _mapToStudyWord(data, true))
+        .toList();
+
+    newWords.addAll(newUserWords);
+
+    // If still need more, fetch global words
+    final remainingCount = neededCount - newWords.length;
+    if (remainingCount > 0) {
+      var globalWordsQuery = _supabaseClient.from('words').select();
+      if (excludeGlobalIds.isNotEmpty) {
+        globalWordsQuery = globalWordsQuery.not(
           'id',
           'in',
-          '(${excludeUserIds.join(',')})',
+          '(${excludeGlobalIds.join(',')})',
         );
       }
-      final newUserWordsResponse = await userWordsQuery.limit(neededCount);
-      final newUserWords = (newUserWordsResponse as List)
-          .map((data) => _mapToStudyWord(data, true))
+      final newGlobalWordsResponse = await globalWordsQuery.limit(
+        remainingCount,
+      );
+      final newGlobalWords = (newGlobalWordsResponse as List)
+          .map((data) => _mapToStudyWord(data, false))
           .toList();
 
-      newWords.addAll(newUserWords);
-
-      // If still need more, fetch global words
-      final remainingCount = neededCount - newWords.length;
-      if (remainingCount > 0) {
-        var globalWordsQuery = _supabaseClient.from('words').select();
-        if (excludeGlobalIds.isNotEmpty) {
-          globalWordsQuery = globalWordsQuery.not(
-            'id',
-            'in',
-            '(${excludeGlobalIds.join(',')})',
-          );
-        }
-        final newGlobalWordsResponse = await globalWordsQuery.limit(
-          remainingCount,
-        );
-        final newGlobalWords = (newGlobalWordsResponse as List)
-            .map((data) => _mapToStudyWord(data, false))
-            .toList();
-
-        newWords.addAll(newGlobalWords);
-      }
+      newWords.addAll(newGlobalWords);
     }
 
     return StudyPlan(

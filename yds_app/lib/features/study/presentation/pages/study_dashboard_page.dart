@@ -41,14 +41,20 @@ class StudyDashboardPage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddWordDialog(context, ref),
+        onPressed: () async {
+          final result = await _showAddWordDialog(context, ref);
+          if (result == true) {
+            // Planı yeniden yükle
+            ref.read(studyPlanControllerProvider.notifier).loadPlan();
+          }
+        },
         icon: const Icon(Icons.add),
         label: const Text('Kelime Ekle'),
       ),
     );
   }
 
-  Future<void> _showAddWordDialog(BuildContext context, WidgetRef ref) async {
+  Future<bool?> _showAddWordDialog(BuildContext context, WidgetRef ref) async {
     final englishController = TextEditingController();
     final turkishController = TextEditingController();
     final exampleController = TextEditingController();
