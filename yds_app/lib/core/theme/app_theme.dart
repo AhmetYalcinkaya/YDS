@@ -99,6 +99,7 @@ class AppTheme {
         ),
         bodyLarge: TextStyle(color: textPrimary, fontSize: 16),
         bodyMedium: TextStyle(color: textSecondary, fontSize: 14),
+        titleMedium: TextStyle(color: textPrimary, fontSize: 16),
       ),
     );
   }
@@ -190,7 +191,8 @@ class AppTheme {
           fontWeight: FontWeight.bold,
         ),
         bodyLarge: TextStyle(color: Colors.white, fontSize: 16),
-        bodyMedium: TextStyle(color: Color(0xFFB0B0B0), fontSize: 14),
+        bodyMedium: TextStyle(color: Colors.white, fontSize: 14),
+        titleMedium: TextStyle(color: Colors.white, fontSize: 16),
       ),
     );
   }

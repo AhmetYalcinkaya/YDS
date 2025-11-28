@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yds_app/features/study/domain/entities/study_word.dart';
 import 'package:yds_app/features/study/domain/repositories/study_plan_repository.dart';
 import 'package:yds_app/features/study/presentation/providers/study_plan_controller.dart';
+import 'package:yds_app/core/theme/theme_provider.dart';
 
 class WordListPage extends ConsumerStatefulWidget {
   const WordListPage({super.key, required this.status, required this.title});
@@ -38,6 +39,9 @@ class _WordListPageState extends ConsumerState<WordListPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch theme mode to force rebuild when theme changes
+    ref.watch(themeModeProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: _isSearching
@@ -116,33 +120,128 @@ class _WordListPageState extends ConsumerState<WordListPage> {
             return const Center(child: Text('Sonuç bulunamadı.'));
           }
 
-          return ListView.separated(
+          return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: filteredWords.length,
-            separatorBuilder: (context, index) => const Divider(),
             itemBuilder: (context, index) {
               final word = filteredWords[index];
-              return ListTile(
-                title: Text(
-                  word.english,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(word.turkish),
-                trailing: word.isUserWord
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.orange),
-                            onPressed: () => _showEditDialog(word),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  word.english,
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                      ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  word.turkish,
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.7),
+                                      ),
+                                ),
+                              ],
+                            ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _showDeleteDialog(word),
-                          ),
+                          if (word.isUserWord)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.edit,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                  onPressed: () => _showEditDialog(word),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.delete,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  onPressed: () => _showDeleteDialog(word),
+                                ),
+                              ],
+                            ),
                         ],
-                      )
-                    : null,
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (word.category != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                word.category!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                            ),
+                          if (word.difficultyLevel != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.secondaryContainer,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                word.difficultyLevel!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
           );

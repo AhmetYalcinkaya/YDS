@@ -48,7 +48,7 @@ class LevelProgressCard extends StatelessWidget {
                   ),
                   child: Icon(
                     Icons.emoji_events,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     size: 32,
                   ),
                 ),

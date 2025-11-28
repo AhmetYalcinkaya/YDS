@@ -21,7 +21,7 @@ class _MainNavigationPageState extends ConsumerState<MainNavigationPage> {
   Widget build(BuildContext context) {
     final pages = [
       const StudyDashboardPage(),
-      const WordListPage(status: WordStatus.all, title: 'Tüm Kelimeler'),
+      WordListPage(status: WordStatus.all, title: 'Tüm Kelimeler'),
       const QuizSetupPage(),
       const ProfilePage(),
     ];
