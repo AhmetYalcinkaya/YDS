@@ -11,10 +11,11 @@ _$StudyWordImpl _$$StudyWordImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       english: json['english'] as String,
       turkish: json['turkish'] as String,
-      partOfSpeech: json['partOfSpeech'] as String,
       exampleSentence: json['exampleSentence'] as String,
       masteryScore: (json['masteryScore'] as num?)?.toInt() ?? 0,
       isUserWord: json['isUserWord'] as bool? ?? false,
+      category: json['category'] as String? ?? 'noun',
+      difficultyLevel: json['difficultyLevel'] as String? ?? 'B1',
     );
 
 Map<String, dynamic> _$$StudyWordImplToJson(_$StudyWordImpl instance) =>
@@ -22,8 +23,9 @@ Map<String, dynamic> _$$StudyWordImplToJson(_$StudyWordImpl instance) =>
       'id': instance.id,
       'english': instance.english,
       'turkish': instance.turkish,
-      'partOfSpeech': instance.partOfSpeech,
       'exampleSentence': instance.exampleSentence,
       'masteryScore': instance.masteryScore,
       'isUserWord': instance.isUserWord,
+      'category': instance.category,
+      'difficultyLevel': instance.difficultyLevel,
     };

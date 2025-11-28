@@ -24,10 +24,11 @@ mixin _$StudyWord {
   String get id => throw _privateConstructorUsedError;
   String get english => throw _privateConstructorUsedError;
   String get turkish => throw _privateConstructorUsedError;
-  String get partOfSpeech => throw _privateConstructorUsedError;
   String get exampleSentence => throw _privateConstructorUsedError;
   int get masteryScore => throw _privateConstructorUsedError;
   bool get isUserWord => throw _privateConstructorUsedError;
+  String get category => throw _privateConstructorUsedError;
+  String get difficultyLevel => throw _privateConstructorUsedError;
 
   /// Serializes this StudyWord to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -48,10 +49,11 @@ abstract class $StudyWordCopyWith<$Res> {
     String id,
     String english,
     String turkish,
-    String partOfSpeech,
     String exampleSentence,
     int masteryScore,
     bool isUserWord,
+    String category,
+    String difficultyLevel,
   });
 }
 
@@ -73,10 +75,11 @@ class _$StudyWordCopyWithImpl<$Res, $Val extends StudyWord>
     Object? id = null,
     Object? english = null,
     Object? turkish = null,
-    Object? partOfSpeech = null,
     Object? exampleSentence = null,
     Object? masteryScore = null,
     Object? isUserWord = null,
+    Object? category = null,
+    Object? difficultyLevel = null,
   }) {
     return _then(
       _value.copyWith(
@@ -92,10 +95,6 @@ class _$StudyWordCopyWithImpl<$Res, $Val extends StudyWord>
                 ? _value.turkish
                 : turkish // ignore: cast_nullable_to_non_nullable
                       as String,
-            partOfSpeech: null == partOfSpeech
-                ? _value.partOfSpeech
-                : partOfSpeech // ignore: cast_nullable_to_non_nullable
-                      as String,
             exampleSentence: null == exampleSentence
                 ? _value.exampleSentence
                 : exampleSentence // ignore: cast_nullable_to_non_nullable
@@ -108,6 +107,14 @@ class _$StudyWordCopyWithImpl<$Res, $Val extends StudyWord>
                 ? _value.isUserWord
                 : isUserWord // ignore: cast_nullable_to_non_nullable
                       as bool,
+            category: null == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
+                      as String,
+            difficultyLevel: null == difficultyLevel
+                ? _value.difficultyLevel
+                : difficultyLevel // ignore: cast_nullable_to_non_nullable
+                      as String,
           )
           as $Val,
     );
@@ -127,10 +134,11 @@ abstract class _$$StudyWordImplCopyWith<$Res>
     String id,
     String english,
     String turkish,
-    String partOfSpeech,
     String exampleSentence,
     int masteryScore,
     bool isUserWord,
+    String category,
+    String difficultyLevel,
   });
 }
 
@@ -151,10 +159,11 @@ class __$$StudyWordImplCopyWithImpl<$Res>
     Object? id = null,
     Object? english = null,
     Object? turkish = null,
-    Object? partOfSpeech = null,
     Object? exampleSentence = null,
     Object? masteryScore = null,
     Object? isUserWord = null,
+    Object? category = null,
+    Object? difficultyLevel = null,
   }) {
     return _then(
       _$StudyWordImpl(
@@ -170,10 +179,6 @@ class __$$StudyWordImplCopyWithImpl<$Res>
             ? _value.turkish
             : turkish // ignore: cast_nullable_to_non_nullable
                   as String,
-        partOfSpeech: null == partOfSpeech
-            ? _value.partOfSpeech
-            : partOfSpeech // ignore: cast_nullable_to_non_nullable
-                  as String,
         exampleSentence: null == exampleSentence
             ? _value.exampleSentence
             : exampleSentence // ignore: cast_nullable_to_non_nullable
@@ -186,6 +191,14 @@ class __$$StudyWordImplCopyWithImpl<$Res>
             ? _value.isUserWord
             : isUserWord // ignore: cast_nullable_to_non_nullable
                   as bool,
+        category: null == category
+            ? _value.category
+            : category // ignore: cast_nullable_to_non_nullable
+                  as String,
+        difficultyLevel: null == difficultyLevel
+            ? _value.difficultyLevel
+            : difficultyLevel // ignore: cast_nullable_to_non_nullable
+                  as String,
       ),
     );
   }
@@ -198,10 +211,11 @@ class _$StudyWordImpl implements _StudyWord {
     required this.id,
     required this.english,
     required this.turkish,
-    required this.partOfSpeech,
     required this.exampleSentence,
     this.masteryScore = 0,
     this.isUserWord = false,
+    this.category = 'noun',
+    this.difficultyLevel = 'B1',
   });
 
   factory _$StudyWordImpl.fromJson(Map<String, dynamic> json) =>
@@ -214,8 +228,6 @@ class _$StudyWordImpl implements _StudyWord {
   @override
   final String turkish;
   @override
-  final String partOfSpeech;
-  @override
   final String exampleSentence;
   @override
   @JsonKey()
@@ -223,10 +235,16 @@ class _$StudyWordImpl implements _StudyWord {
   @override
   @JsonKey()
   final bool isUserWord;
+  @override
+  @JsonKey()
+  final String category;
+  @override
+  @JsonKey()
+  final String difficultyLevel;
 
   @override
   String toString() {
-    return 'StudyWord(id: $id, english: $english, turkish: $turkish, partOfSpeech: $partOfSpeech, exampleSentence: $exampleSentence, masteryScore: $masteryScore, isUserWord: $isUserWord)';
+    return 'StudyWord(id: $id, english: $english, turkish: $turkish, exampleSentence: $exampleSentence, masteryScore: $masteryScore, isUserWord: $isUserWord, category: $category, difficultyLevel: $difficultyLevel)';
   }
 
   @override
@@ -237,14 +255,16 @@ class _$StudyWordImpl implements _StudyWord {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.english, english) || other.english == english) &&
             (identical(other.turkish, turkish) || other.turkish == turkish) &&
-            (identical(other.partOfSpeech, partOfSpeech) ||
-                other.partOfSpeech == partOfSpeech) &&
             (identical(other.exampleSentence, exampleSentence) ||
                 other.exampleSentence == exampleSentence) &&
             (identical(other.masteryScore, masteryScore) ||
                 other.masteryScore == masteryScore) &&
             (identical(other.isUserWord, isUserWord) ||
-                other.isUserWord == isUserWord));
+                other.isUserWord == isUserWord) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
+            (identical(other.difficultyLevel, difficultyLevel) ||
+                other.difficultyLevel == difficultyLevel));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -254,10 +274,11 @@ class _$StudyWordImpl implements _StudyWord {
     id,
     english,
     turkish,
-    partOfSpeech,
     exampleSentence,
     masteryScore,
     isUserWord,
+    category,
+    difficultyLevel,
   );
 
   /// Create a copy of StudyWord
@@ -279,10 +300,11 @@ abstract class _StudyWord implements StudyWord {
     required final String id,
     required final String english,
     required final String turkish,
-    required final String partOfSpeech,
     required final String exampleSentence,
     final int masteryScore,
     final bool isUserWord,
+    final String category,
+    final String difficultyLevel,
   }) = _$StudyWordImpl;
 
   factory _StudyWord.fromJson(Map<String, dynamic> json) =
@@ -295,13 +317,15 @@ abstract class _StudyWord implements StudyWord {
   @override
   String get turkish;
   @override
-  String get partOfSpeech;
-  @override
   String get exampleSentence;
   @override
   int get masteryScore;
   @override
   bool get isUserWord;
+  @override
+  String get category;
+  @override
+  String get difficultyLevel;
 
   /// Create a copy of StudyWord
   /// with the given fields replaced by the non-null parameter values.

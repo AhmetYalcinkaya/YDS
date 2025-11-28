@@ -156,10 +156,11 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
       id: (data['id'] as String?) ?? '',
       english: (data['english'] as String?) ?? '',
       turkish: (data['turkish'] as String?) ?? '',
-      partOfSpeech: (data['part_of_speech'] as String?) ?? 'noun',
       exampleSentence: (data['example_sentence'] as String?) ?? '',
       masteryScore: 0,
       isUserWord: isUserWord,
+      category: (data['category'] as String?) ?? 'noun',
+      difficultyLevel: (data['difficulty_level'] as String?) ?? 'B1',
     );
   }
 

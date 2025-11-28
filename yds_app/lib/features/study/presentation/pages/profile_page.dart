@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yds_app/core/theme/theme_provider.dart';
 import 'package:yds_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:yds_app/features/study/domain/entities/study_statistics.dart';
 import 'package:yds_app/features/study/domain/repositories/study_plan_repository.dart';
@@ -31,26 +32,41 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Profilim'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await ref.read(authRepositoryProvider).signOut();
-              if (mounted) {
-                Navigator.of(
-                  context,
-                ).pop(); // Close profile page if opened as dialog/page
-              }
             },
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            const CircleAvatar(radius: 50, child: Icon(Icons.person, size: 50)),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).primaryColor,
+                  width: 3,
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.grey[200],
+                child: Icon(
+                  Icons.person,
+                  size: 50,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             FutureBuilder<Map<String, dynamic>?>(
               future: _profileFuture,
@@ -58,11 +74,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 final displayName = snapshot.data?['display_name'] as String?;
                 return Text(
                   displayName ?? user?.email ?? 'Kullanıcı',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 );
               },
             ),
-            const SizedBox(height: 32),
+            Text(
+              user?.email ?? '',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 40),
             FutureBuilder<StudyStatistics>(
               future: _statisticsFuture,
               builder: (context, snapshot) {
@@ -77,37 +99,88 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 }
 
                 final stats = snapshot.data!;
-                return Column(
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
                   children: [
                     _buildStatCard(
                       context,
-                      'Toplam Çalışılan',
+                      'Toplam',
                       stats.totalWordsStudied.toString(),
                       Icons.book,
-                      Colors.blue,
+                      const Color(0xFF4E6AF3), // Royal Blue
                       WordStatus.all,
                     ),
-                    const SizedBox(height: 16),
                     _buildStatCard(
                       context,
                       'Ezberlenen',
                       stats.masteredWords.toString(),
                       Icons.check_circle,
-                      Colors.green,
+                      const Color(0xFF2ECC71), // Mint Green
                       WordStatus.mastered,
                     ),
-                    const SizedBox(height: 16),
                     _buildStatCard(
                       context,
                       'Öğreniliyor',
                       stats.learningWords.toString(),
                       Icons.school,
-                      Colors.orange,
+                      const Color(0xFFF1C40F), // Sunflower Yellow
                       WordStatus.learning,
+                    ),
+                    _buildStatCard(
+                      context,
+                      'Seri',
+                      '${stats.streakDays} Gün',
+                      Icons.local_fire_department,
+                      const Color(0xFFFF5252), // Red
+                      WordStatus.all, // Streak doesn't have a specific list
                     ),
                   ],
                 );
               },
+            ),
+            const SizedBox(height: 40),
+            // Settings Section
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ayarlar',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.dark_mode,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          'Karanlık Mod',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ),
+                      Switch(
+                        value: ref.watch(themeModeProvider) == ThemeMode.dark,
+                        onChanged: (value) {
+                          ref.read(themeModeProvider.notifier).toggleTheme();
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -123,53 +196,57 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     Color color,
     WordStatus status,
   ) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => WordListPage(status: status, title: title),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: color, size: 32),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
-                  ),
-                  Text(
-                    value,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Icon(Icons.chevron_right, color: Colors.grey[400]),
-            ],
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => WordListPage(status: status, title: title),
           ),
+        );
+      },
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 32),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -10,10 +10,11 @@ class StudyWord with _$StudyWord {
     required String id,
     required String english,
     required String turkish,
-    required String partOfSpeech,
     required String exampleSentence,
     @Default(0) int masteryScore,
     @Default(false) bool isUserWord,
+    @Default('noun') String category,
+    @Default('B1') String difficultyLevel,
   }) = _StudyWord;
 
   factory StudyWord.fromJson(Map<String, dynamic> json) =>

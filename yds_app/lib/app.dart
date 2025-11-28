@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
-import 'features/study/presentation/pages/study_dashboard_page.dart';
+import 'features/navigation/main_navigation_page.dart';
 
 /// Uygulamanın kök widget'ı.
 class YdsApp extends ConsumerWidget {
@@ -13,15 +14,18 @@ class YdsApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'YDS 1000 Kelime',
-      theme: AppTheme.light,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       home: authState.when(
         data: (state) {
           if (state.session != null) {
-            return const StudyDashboardPage();
+            return const MainNavigationPage();
           } else {
             return const LoginPage();
           }
