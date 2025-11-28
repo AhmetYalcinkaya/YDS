@@ -217,9 +217,6 @@ if (difficulty == Difficulty.easy) {
 ## 🔮 Gelecek Özellikler
 
 - [ ] **Quiz Modu**: Çoktan seçmeli testler
-- [ ] **Kategoriler**: Kelime türlerine göre filtreleme (Fiil, İsim, Sıfat)
-- [ ] **Zorluk Seviyeleri**: A1, A2, B1, B2, C1, C2
-- [ ] **Gamification**: Rozetler ve seviye sistemi
 - [ ] **Bildirimler**: Günlük hatırlatıcılar
 - [ ] **Offline Mod**: İnternet olmadan çalışma
 - [ ] **Sesli Telaffuz**: Kelimelerin okunuşu
@@ -250,7 +247,7 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 **Ahmet Yalçınkaya**
 
 - GitHub: [@AhmetYalcinkaya](https://github.com/AhmetYalcinkaya)
-- Email: your.email@example.com
+- Email: a.yalcinkaya0@gmail.com
 
 ---
 
