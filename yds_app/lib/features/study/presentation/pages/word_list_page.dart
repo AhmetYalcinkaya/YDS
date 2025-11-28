@@ -19,6 +19,8 @@ class _WordListPageState extends ConsumerState<WordListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isSearching = false;
+  String? _selectedCategory;
+  String? _selectedDifficulty;
 
   @override
   void initState() {
@@ -56,6 +58,18 @@ class _WordListPageState extends ConsumerState<WordListPage> {
               )
             : Text(widget.title),
         actions: [
+          // Filter button
+          if (!_isSearching)
+            IconButton(
+              icon: Icon(
+                Icons.filter_list,
+                color:
+                    (_selectedCategory != null || _selectedDifficulty != null)
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+              ),
+              onPressed: () => _showFilterDialog(),
+            ),
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
             onPressed: () {
@@ -87,8 +101,15 @@ class _WordListPageState extends ConsumerState<WordListPage> {
 
           final allWords = snapshot.data!;
           final filteredWords = allWords.where((word) {
-            return word.english.toLowerCase().contains(_searchQuery) ||
+            final matchesSearch =
+                word.english.toLowerCase().contains(_searchQuery) ||
                 word.turkish.toLowerCase().contains(_searchQuery);
+            final matchesCategory =
+                _selectedCategory == null || word.category == _selectedCategory;
+            final matchesDifficulty =
+                _selectedDifficulty == null ||
+                word.difficultyLevel == _selectedDifficulty;
+            return matchesSearch && matchesCategory && matchesDifficulty;
           }).toList();
 
           if (filteredWords.isEmpty) {
@@ -215,5 +236,103 @@ class _WordListPageState extends ConsumerState<WordListPage> {
           .read(studyPlanRepositoryProvider)
           .getWordsByStatus(widget.status);
     });
+  }
+
+  Future<void> _showFilterDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Filtrele'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Kategori',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                _buildFilterChip('Tümü', null, _selectedCategory, (value) {
+                  setState(() => _selectedCategory = value);
+                  Navigator.pop(context);
+                }),
+                _buildFilterChip('İsim', 'noun', _selectedCategory, (value) {
+                  setState(() => _selectedCategory = value);
+                  Navigator.pop(context);
+                }),
+                _buildFilterChip('Fiil', 'verb', _selectedCategory, (value) {
+                  setState(() => _selectedCategory = value);
+                  Navigator.pop(context);
+                }),
+                _buildFilterChip('Sıfat', 'adjective', _selectedCategory, (
+                  value,
+                ) {
+                  setState(() => _selectedCategory = value);
+                  Navigator.pop(context);
+                }),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text('Zorluk', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                _buildFilterChip('Tümü', null, _selectedDifficulty, (value) {
+                  setState(() => _selectedDifficulty = value);
+                  Navigator.pop(context);
+                }),
+                _buildFilterChip('A1', 'A1', _selectedDifficulty, (value) {
+                  setState(() => _selectedDifficulty = value);
+                  Navigator.pop(context);
+                }),
+                _buildFilterChip('A2', 'A2', _selectedDifficulty, (value) {
+                  setState(() => _selectedDifficulty = value);
+                  Navigator.pop(context);
+                }),
+                _buildFilterChip('B1', 'B1', _selectedDifficulty, (value) {
+                  setState(() => _selectedDifficulty = value);
+                  Navigator.pop(context);
+                }),
+                _buildFilterChip('B2', 'B2', _selectedDifficulty, (value) {
+                  setState(() => _selectedDifficulty = value);
+                  Navigator.pop(context);
+                }),
+                _buildFilterChip('C1', 'C1', _selectedDifficulty, (value) {
+                  setState(() => _selectedDifficulty = value);
+                  Navigator.pop(context);
+                }),
+                _buildFilterChip('C2', 'C2', _selectedDifficulty, (value) {
+                  setState(() => _selectedDifficulty = value);
+                  Navigator.pop(context);
+                }),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(
+    String label,
+    String? value,
+    String? currentValue,
+    Function(String?) onSelected,
+  ) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: currentValue == value,
+      onSelected: (selected) => onSelected(selected ? value : null),
+    );
   }
 }

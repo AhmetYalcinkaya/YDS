@@ -17,7 +17,7 @@ class WordCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       elevation: 4,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -61,17 +61,43 @@ class WordCard extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            Text(
-              word.partOfSpeech,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildBadge(
                   context,
-                ).colorScheme.onPrimaryContainer.withOpacity(0.7),
-                fontStyle: FontStyle.italic,
-              ),
+                  word.category,
+                  Theme.of(
+                    context,
+                  ).colorScheme.onPrimaryContainer.withOpacity(0.2),
+                ),
+                const SizedBox(width: 8),
+                _buildBadge(
+                  context,
+                  word.difficultyLevel,
+                  Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                ),
+              ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadge(BuildContext context, String text, Color backgroundColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text.toUpperCase(),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.onPrimaryContainer,
         ),
       ),
     );

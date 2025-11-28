@@ -18,26 +18,8 @@ class StudyDashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final planState = ref.watch(studyPlanControllerProvider);
-    final currentUser = ref.watch(currentUserProvider);
-
-    // Get user's first name or email
-    final userName = currentUser?.email?.split('@').first ?? 'Kullanıcı';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Hoşgeldin, $userName'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const ProfilePage()),
-              );
-            },
-            tooltip: 'Profil',
-          ),
-        ],
-      ),
       body: planState.when(
         data: (plan) => _DashboardBody(plan: plan),
         error: (error, _) => _ErrorState(message: error.toString()),
@@ -61,7 +43,8 @@ class StudyDashboardPage extends ConsumerWidget {
     final englishController = TextEditingController();
     final turkishController = TextEditingController();
     final exampleController = TextEditingController();
-    String partOfSpeech = 'noun';
+    String category = 'noun';
+    String difficultyLevel = 'B1';
 
     final result = await showDialog<bool>(
       context: context,
@@ -89,17 +72,50 @@ class StudyDashboardPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: partOfSpeech,
-                  decoration: const InputDecoration(labelText: 'Tür'),
+                  value: category,
+                  decoration: const InputDecoration(labelText: 'Kategori'),
                   items: const [
                     DropdownMenuItem(value: 'noun', child: Text('İsim')),
                     DropdownMenuItem(value: 'verb', child: Text('Fiil')),
                     DropdownMenuItem(value: 'adjective', child: Text('Sıfat')),
                     DropdownMenuItem(value: 'adverb', child: Text('Zarf')),
+                    DropdownMenuItem(value: 'preposition', child: Text('Edat')),
+                    DropdownMenuItem(
+                      value: 'conjunction',
+                      child: Text('Bağlaç'),
+                    ),
+                    DropdownMenuItem(value: 'pronoun', child: Text('Zamir')),
+                    DropdownMenuItem(value: 'other', child: Text('Diğer')),
                   ],
                   onChanged: (value) {
                     if (value != null) {
-                      setState(() => partOfSpeech = value);
+                      setState(() => category = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: difficultyLevel,
+                  decoration: const InputDecoration(
+                    labelText: 'Zorluk Seviyesi',
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'A1',
+                      child: Text('A1 - Başlangıç'),
+                    ),
+                    DropdownMenuItem(value: 'A2', child: Text('A2 - Temel')),
+                    DropdownMenuItem(value: 'B1', child: Text('B1 - Orta')),
+                    DropdownMenuItem(
+                      value: 'B2',
+                      child: Text('B2 - Orta-İleri'),
+                    ),
+                    DropdownMenuItem(value: 'C1', child: Text('C1 - İleri')),
+                    DropdownMenuItem(value: 'C2', child: Text('C2 - Uzman')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => difficultyLevel = value);
                     }
                   },
                 ),
@@ -141,8 +157,9 @@ class StudyDashboardPage extends ConsumerWidget {
                           'user_id': userId,
                           'english': englishController.text.trim(),
                           'turkish': turkishController.text.trim(),
-                          'part_of_speech': partOfSpeech,
                           'example_sentence': exampleController.text.trim(),
+                          'category': category,
+                          'difficulty_level': difficultyLevel,
                         });
                     if (context.mounted) {
                       Navigator.pop(context, true);
@@ -302,23 +319,167 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
     );
 
     return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          StudyProgressHeader(
-            plan: currentPlan,
-            onDailyTargetChanged: _handleDailyTargetChanged,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            _buildDailyProgressCard(context, currentPlan),
+            const SizedBox(height: 24),
+            Text(
+              'Bugünün Kelimeleri',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: WordListView(
+                words: _displayedWords,
+                onWordRated: _handleWordRated,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDailyProgressCard(BuildContext context, StudyPlan plan) {
+    final progress = plan.dailyTarget > 0
+        ? plan.completedToday / plan.dailyTarget
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
-          const SizedBox(height: 12),
+        ],
+      ),
+      child: Row(
+        children: [
           Expanded(
-            child: WordListView(
-              words: _displayedWords,
-              onWordRated: _handleWordRated,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Günlük Hedef',
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${plan.completedToday}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '/${plan.dailyTarget}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => _showTargetDialog(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Hedefi Düzenle',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 100,
+            width: 100,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CircularProgressIndicator(
+                  value: progress,
+                  strokeWidth: 10,
+                  backgroundColor: Colors.white.withOpacity(0.2),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+                Center(
+                  child: Text(
+                    '%${(progress * 100).toInt()}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _showTargetDialog(BuildContext context) async {
+    final controller = TextEditingController(text: _dailyTarget.toString());
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Günlük Hedef'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Yeni Hedef',
+            suffixText: 'kelime',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final val = int.tryParse(controller.text);
+              if (val != null && val > 0) {
+                Navigator.pop(context, val);
+              }
+            },
+            child: const Text('Kaydet'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      _handleDailyTargetChanged(result);
+    }
   }
 }
 
