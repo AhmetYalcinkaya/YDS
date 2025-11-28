@@ -5,6 +5,11 @@ import 'package:yds_app/features/auth/presentation/providers/auth_provider.dart'
 import 'package:yds_app/features/study/domain/entities/study_statistics.dart';
 import 'package:yds_app/features/study/domain/repositories/study_plan_repository.dart';
 import 'package:yds_app/features/study/presentation/providers/study_plan_controller.dart';
+import '../../../gamification/domain/entities/user_stats.dart';
+import '../../../gamification/domain/entities/badge.dart' as game_badge;
+import '../../../gamification/data/repositories/gamification_repository_impl.dart';
+import '../../../gamification/presentation/widgets/level_progress_card.dart';
+import '../../../gamification/presentation/widgets/badges_grid.dart';
 import 'word_list_page.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -17,13 +22,22 @@ class ProfilePage extends ConsumerStatefulWidget {
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   late Future<StudyStatistics> _statisticsFuture;
   late Future<Map<String, dynamic>?> _profileFuture;
+  late Future<UserStats> _userStatsFuture;
+  late Future<List<game_badge.Badge>> _badgesFuture;
 
   @override
   void initState() {
     super.initState();
     final repo = ref.read(studyPlanRepositoryProvider);
+    final gameRepo = ref.read(gamificationRepositoryProvider);
+
     _statisticsFuture = repo.getStatistics();
     _profileFuture = repo.getUserProfile();
+    _userStatsFuture = gameRepo.getUserStats();
+    _badgesFuture = gameRepo.getBadges();
+
+    // Check for new badges on profile load
+    gameRepo.checkAndAwardBadges();
   }
 
   @override
@@ -46,45 +60,67 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Theme.of(context).primaryColor,
-                  width: 3,
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).primaryColor,
+                    width: 3,
+                  ),
                 ),
-              ),
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey[200],
-                child: Icon(
-                  Icons.person,
-                  size: 50,
-                  color: Theme.of(context).primaryColor,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.grey[200],
+                  child: Icon(
+                    Icons.person,
+                    size: 50,
+                    color: Theme.of(context).primaryColor,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            FutureBuilder<Map<String, dynamic>?>(
-              future: _profileFuture,
+            Center(
+              child: FutureBuilder<Map<String, dynamic>?>(
+                future: _profileFuture,
+                builder: (context, snapshot) {
+                  final displayName = snapshot.data?['display_name'] as String?;
+                  return Text(
+                    displayName ?? user?.email ?? 'Kullanıcı',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                },
+              ),
+            ),
+            Center(
+              child: Text(
+                user?.email ?? '',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Level Progress
+            FutureBuilder<UserStats>(
+              future: _userStatsFuture,
               builder: (context, snapshot) {
-                final displayName = snapshot.data?['display_name'] as String?;
-                return Text(
-                  displayName ?? user?.email ?? 'Kullanıcı',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                );
+                if (snapshot.hasData) {
+                  return LevelProgressCard(stats: snapshot.data!);
+                }
+                return const SizedBox.shrink();
               },
             ),
-            Text(
-              user?.email ?? '',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 40),
+
+            const SizedBox(height: 24),
+
+            // Statistics Grid
             FutureBuilder<StudyStatistics>(
               future: _statisticsFuture,
               builder: (context, snapshot) {
@@ -142,6 +178,27 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 );
               },
             ),
+
+            const SizedBox(height: 32),
+
+            // Badges Section
+            Text(
+              'Rozetler',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            FutureBuilder<List<game_badge.Badge>>(
+              future: _badgesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return BadgesGrid(badges: snapshot.data!);
+                }
+                return const Center(child: CircularProgressIndicator());
+              },
+            ),
+
             const SizedBox(height: 40),
             // Settings Section
             Container(

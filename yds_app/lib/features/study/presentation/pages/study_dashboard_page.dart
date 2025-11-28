@@ -284,10 +284,30 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
         _dailyTarget += 10;
       });
 
-      // Load more words if needed
-      if (_displayedWords.isEmpty) {
-        await ref.read(studyPlanControllerProvider.notifier).loadPlan();
-      }
+      // Get current plan state
+      final planState = ref.read(studyPlanControllerProvider);
+
+      planState.whenData((currentPlan) {
+        final remainingWords = currentPlan.dueWords
+            .where((w) => !_displayedWords.any((dw) => dw.id == w.id))
+            .toList();
+
+        if (remainingWords.isNotEmpty) {
+          setState(() {
+            _displayedWords.addAll(remainingWords.take(10));
+          });
+        } else {
+          // If no remaining words, reload the plan
+          ref.read(studyPlanControllerProvider.notifier).loadPlan().then((_) {
+            final newPlanState = ref.read(studyPlanControllerProvider);
+            newPlanState.whenData((newPlan) {
+              setState(() {
+                _displayedWords.addAll(newPlan.dueWords.take(10));
+              });
+            });
+          });
+        }
+      });
     }
   }
 
