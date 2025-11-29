@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/user_stats.dart';
 import '../../domain/entities/badge.dart';
+import '../../domain/entities/leaderboard_entry.dart';
 import '../../domain/repositories/gamification_repository.dart';
 
 final gamificationRepositoryProvider = Provider<GamificationRepository>((ref) {
@@ -121,7 +122,71 @@ class GamificationRepositoryImpl implements GamificationRepository {
     }
   }
 
-  Future<void> _awardBadge(String badgeCode) async {
+  @override
+  Future<List<String>> checkQuizBadges(
+    int correctAnswers,
+    int totalQuestions,
+  ) async {
+    final awardedBadges = <String>[];
+    if (totalQuestions == 0) return awardedBadges;
+
+    final percentage = correctAnswers / totalQuestions;
+
+    // 'quiz_master' badge: > 80% success
+    if (percentage >= 0.8) {
+      if (await _awardBadge('quiz_master')) {
+        awardedBadges.add('Quiz Ustası');
+      }
+    }
+
+    return awardedBadges;
+  }
+
+  @override
+  Future<List<LeaderboardEntry>> getLeaderboard() async {
+    // 1. Fetch top 50 users by XP
+    final statsResponse = await _supabase
+        .from('user_stats')
+        .select()
+        .order('xp', ascending: false)
+        .limit(50);
+
+    final statsList = statsResponse as List;
+    if (statsList.isEmpty) return [];
+
+    // 2. Get user IDs
+    final userIds = statsList.map((e) => e['user_id'] as String).toList();
+
+    // 3. Fetch user profiles
+    final profilesResponse = await _supabase
+        .from('users')
+        .select('id, display_name')
+        .inFilter('id', userIds);
+
+    final profilesMap = {
+      for (var p in (profilesResponse as List)) p['id'] as String: p,
+    };
+
+    // 4. Map to LeaderboardEntry
+    return statsList.asMap().entries.map((entry) {
+      final index = entry.key;
+      final stats = entry.value;
+      final userId = stats['user_id'] as String;
+      final profile = profilesMap[userId];
+
+      return LeaderboardEntry(
+        userId: userId,
+        displayName: profile?['display_name'] as String? ?? 'Kullanıcı',
+        xp: stats['xp'] as int,
+        level: stats['level'] as int,
+        rank: index + 1,
+        avatarUrl: null, // avatar_url column doesn't exist yet
+      );
+    }).toList();
+  }
+
+  /// Returns true if badge was newly awarded, false if already owned
+  Future<bool> _awardBadge(String badgeCode) async {
     final userId = _supabase.auth.currentUser!.id;
 
     // Get badge ID
@@ -131,7 +196,7 @@ class GamificationRepositoryImpl implements GamificationRepository {
         .eq('code', badgeCode)
         .maybeSingle();
 
-    if (badgeRes == null) return;
+    if (badgeRes == null) return false;
     final badgeId = badgeRes['id'];
 
     // Check if already earned
@@ -142,12 +207,14 @@ class GamificationRepositoryImpl implements GamificationRepository {
         .eq('badge_id', badgeId)
         .maybeSingle();
 
-    if (earnedRes != null) return; // Already earned
+    if (earnedRes != null) return false; // Already earned
 
     // Award badge
     await _supabase.from('user_badges').insert({
       'user_id': userId,
       'badge_id': badgeId,
     });
+
+    return true;
   }
 }
