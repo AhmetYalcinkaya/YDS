@@ -4,9 +4,14 @@ import 'quiz_setup_page.dart';
 
 /// Quiz results page showing score and performance
 class QuizResultPage extends StatelessWidget {
-  const QuizResultPage({super.key, required this.result});
+  const QuizResultPage({
+    super.key,
+    required this.result,
+    this.earnedBadges = const [],
+  });
 
   final QuizResult result;
+  final List<String> earnedBadges;
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +25,9 @@ class QuizResultPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Earned Badges
+            _buildEarnedBadges(context),
+
             // Score card
             Card(
               color: result.percentage >= 75
@@ -144,6 +152,43 @@ class QuizResultPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEarnedBadges(BuildContext context) {
+    if (earnedBadges.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            '🎉 Yeni Rozet Kazandın!',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.amber,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            children: earnedBadges.map((badgeName) {
+              return Chip(
+                avatar: const Icon(Icons.emoji_events, color: Colors.amber),
+                label: Text(badgeName),
+                backgroundColor: Colors.white,
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }

@@ -15,6 +15,7 @@ class StudyWord with _$StudyWord {
     @Default(false) bool isUserWord,
     @Default('noun') String category,
     @Default('B1') String difficultyLevel,
+    @Default(false) bool isFavorite,
   }) = _StudyWord;
 
   factory StudyWord.fromJson(Map<String, dynamic> json) =>
