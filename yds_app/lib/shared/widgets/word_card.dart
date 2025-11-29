@@ -52,22 +52,21 @@ class WordCard extends StatelessWidget {
         color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              word.english,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Row(
+      child: Stack(
+        children: [
+          Center(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Text(
+                  word.english,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
                 IconButton(
                   icon: const Icon(Icons.volume_up),
                   onPressed: () {
@@ -76,42 +75,45 @@ class WordCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                   tooltip: 'Telaffuz dinle',
                 ),
-                if (onFavoriteToggle != null)
-                  IconButton(
-                    icon: Icon(
-                      word.isFavorite ? Icons.star : Icons.star_border,
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildBadge(
+                      context,
+                      word.category,
+                      Theme.of(
+                        context,
+                      ).colorScheme.onPrimaryContainer.withOpacity(0.2),
                     ),
-                    onPressed: onFavoriteToggle,
-                    color: word.isFavorite
-                        ? Colors.amber
-                        : Theme.of(context).colorScheme.onPrimaryContainer,
-                    tooltip: word.isFavorite
-                        ? 'Favorilerden çıkar'
-                        : 'Favorilere ekle',
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildBadge(
-                  context,
-                  word.category,
-                  Theme.of(
-                    context,
-                  ).colorScheme.onPrimaryContainer.withOpacity(0.2),
-                ),
-                const SizedBox(width: 8),
-                _buildBadge(
-                  context,
-                  word.difficultyLevel,
-                  Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                    const SizedBox(width: 8),
+                    _buildBadge(
+                      context,
+                      word.difficultyLevel,
+                      Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          // Favorite icon at top-right
+          if (onFavoriteToggle != null)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Icon(word.isFavorite ? Icons.star : Icons.star_border),
+                onPressed: onFavoriteToggle,
+                color: word.isFavorite
+                    ? Colors.amber
+                    : Theme.of(context).colorScheme.onPrimaryContainer,
+                tooltip: word.isFavorite
+                    ? 'Favorilerden çıkar'
+                    : 'Favorilere ekle',
+              ),
+            ),
+        ],
       ),
     );
   }

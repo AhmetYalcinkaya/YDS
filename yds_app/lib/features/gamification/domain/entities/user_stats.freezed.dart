@@ -22,6 +22,7 @@ mixin _$UserStats {
   int get level => throw _privateConstructorUsedError;
   int get currentStreak => throw _privateConstructorUsedError;
   DateTime get lastActivityDate => throw _privateConstructorUsedError;
+  int get favoriteCount => throw _privateConstructorUsedError;
 
   /// Create a copy of UserStats
   /// with the given fields replaced by the non-null parameter values.
@@ -41,6 +42,7 @@ abstract class $UserStatsCopyWith<$Res> {
     int level,
     int currentStreak,
     DateTime lastActivityDate,
+    int favoriteCount,
   });
 }
 
@@ -64,6 +66,7 @@ class _$UserStatsCopyWithImpl<$Res, $Val extends UserStats>
     Object? level = null,
     Object? currentStreak = null,
     Object? lastActivityDate = null,
+    Object? favoriteCount = null,
   }) {
     return _then(
       _value.copyWith(
@@ -87,6 +90,10 @@ class _$UserStatsCopyWithImpl<$Res, $Val extends UserStats>
                 ? _value.lastActivityDate
                 : lastActivityDate // ignore: cast_nullable_to_non_nullable
                       as DateTime,
+            favoriteCount: null == favoriteCount
+                ? _value.favoriteCount
+                : favoriteCount // ignore: cast_nullable_to_non_nullable
+                      as int,
           )
           as $Val,
     );
@@ -108,6 +115,7 @@ abstract class _$$UserStatsImplCopyWith<$Res>
     int level,
     int currentStreak,
     DateTime lastActivityDate,
+    int favoriteCount,
   });
 }
 
@@ -130,6 +138,7 @@ class __$$UserStatsImplCopyWithImpl<$Res>
     Object? level = null,
     Object? currentStreak = null,
     Object? lastActivityDate = null,
+    Object? favoriteCount = null,
   }) {
     return _then(
       _$UserStatsImpl(
@@ -153,6 +162,10 @@ class __$$UserStatsImplCopyWithImpl<$Res>
             ? _value.lastActivityDate
             : lastActivityDate // ignore: cast_nullable_to_non_nullable
                   as DateTime,
+        favoriteCount: null == favoriteCount
+            ? _value.favoriteCount
+            : favoriteCount // ignore: cast_nullable_to_non_nullable
+                  as int,
       ),
     );
   }
@@ -167,6 +180,7 @@ class _$UserStatsImpl implements _UserStats {
     this.level = 1,
     this.currentStreak = 0,
     required this.lastActivityDate,
+    this.favoriteCount = 0,
   });
 
   @override
@@ -182,10 +196,13 @@ class _$UserStatsImpl implements _UserStats {
   final int currentStreak;
   @override
   final DateTime lastActivityDate;
+  @override
+  @JsonKey()
+  final int favoriteCount;
 
   @override
   String toString() {
-    return 'UserStats(userId: $userId, xp: $xp, level: $level, currentStreak: $currentStreak, lastActivityDate: $lastActivityDate)';
+    return 'UserStats(userId: $userId, xp: $xp, level: $level, currentStreak: $currentStreak, lastActivityDate: $lastActivityDate, favoriteCount: $favoriteCount)';
   }
 
   @override
@@ -199,7 +216,9 @@ class _$UserStatsImpl implements _UserStats {
             (identical(other.currentStreak, currentStreak) ||
                 other.currentStreak == currentStreak) &&
             (identical(other.lastActivityDate, lastActivityDate) ||
-                other.lastActivityDate == lastActivityDate));
+                other.lastActivityDate == lastActivityDate) &&
+            (identical(other.favoriteCount, favoriteCount) ||
+                other.favoriteCount == favoriteCount));
   }
 
   @override
@@ -210,6 +229,7 @@ class _$UserStatsImpl implements _UserStats {
     level,
     currentStreak,
     lastActivityDate,
+    favoriteCount,
   );
 
   /// Create a copy of UserStats
@@ -228,6 +248,7 @@ abstract class _UserStats implements UserStats {
     final int level,
     final int currentStreak,
     required final DateTime lastActivityDate,
+    final int favoriteCount,
   }) = _$UserStatsImpl;
 
   @override
@@ -240,6 +261,8 @@ abstract class _UserStats implements UserStats {
   int get currentStreak;
   @override
   DateTime get lastActivityDate;
+  @override
+  int get favoriteCount;
 
   /// Create a copy of UserStats
   /// with the given fields replaced by the non-null parameter values.

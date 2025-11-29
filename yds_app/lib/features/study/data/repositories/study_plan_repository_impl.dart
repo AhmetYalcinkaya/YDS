@@ -40,18 +40,30 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     // 1. Fetch words due for review (where next_review_date <= now)
     final dueProgressResponse = await _supabaseClient
         .from('user_progress')
-        .select('word_id, user_word_id')
+        .select('word_id, user_word_id, is_favorite')
         .eq('user_id', userId)
         .lte('next_review_date', DateTime.now().toIso8601String());
 
+    // Create maps to store favorite status
+    final Map<String, bool> globalWordFavorites = {};
+    final Map<String, bool> userWordFavorites = {};
+
     final dueGlobalWordIds = (dueProgressResponse as List)
         .where((e) => e['word_id'] != null)
-        .map((e) => e['word_id'] as String)
+        .map((e) {
+          final wordId = e['word_id'] as String;
+          globalWordFavorites[wordId] = e['is_favorite'] as bool? ?? false;
+          return wordId;
+        })
         .toList();
 
     final dueUserWordIds = (dueProgressResponse)
         .where((e) => e['user_word_id'] != null)
-        .map((e) => e['user_word_id'] as String)
+        .map((e) {
+          final wordId = e['user_word_id'] as String;
+          userWordFavorites[wordId] = e['is_favorite'] as bool? ?? false;
+          return wordId;
+        })
         .toList();
 
     // 2. Fetch details for due words
@@ -63,7 +75,10 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
           .select()
           .inFilter('id', dueGlobalWordIds);
       dueWords.addAll(
-        (response as List).map((data) => _mapToStudyWord(data, false)),
+        (response as List).map((data) {
+          data['is_favorite'] = globalWordFavorites[data['id']] ?? false;
+          return _mapToStudyWord(data, false);
+        }),
       );
     }
 
@@ -73,7 +88,10 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
           .select()
           .inFilter('id', dueUserWordIds);
       dueWords.addAll(
-        (response as List).map((data) => _mapToStudyWord(data, true)),
+        (response as List).map((data) {
+          data['is_favorite'] = userWordFavorites[data['id']] ?? false;
+          return _mapToStudyWord(data, true);
+        }),
       );
     }
 
@@ -243,11 +261,30 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     // 4. Streak (Placeholder for now)
     const streakDays = 0;
 
+    // 5. Favorites
+    final globalFavoritesResponse = await _supabaseClient
+        .from('user_progress')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_favorite', true)
+        .count(CountOption.exact);
+
+    final userFavoritesResponse = await _supabaseClient
+        .from('user_words')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_favorite', true)
+        .count(CountOption.exact);
+
+    final favoriteCount =
+        (globalFavoritesResponse.count) + (userFavoritesResponse.count);
+
     return StudyStatistics(
       totalWordsStudied: totalWords,
       masteredWords: masteredWords,
       learningWords: learningWords,
       streakDays: streakDays,
+      favoriteCount: favoriteCount,
     );
   }
 
@@ -551,6 +588,16 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
             .update({'is_favorite': !currentFavorite})
             .eq('word_id', wordId)
             .eq('user_id', userId);
+      } else {
+        // Create new progress record with favorite=true
+        await _supabaseClient.from('user_progress').insert({
+          'user_id': userId,
+          'word_id': wordId,
+          'is_favorite': true,
+          'interval': 0,
+          'ease_factor': 2.5,
+          'next_review_date': DateTime.now().toIso8601String(),
+        });
       }
     }
   }

@@ -10,6 +10,7 @@ class UserStats with _$UserStats {
     @Default(1) int level,
     @Default(0) int currentStreak,
     required DateTime lastActivityDate,
+    @Default(0) int favoriteCount,
   }) = _UserStats;
 
   factory UserStats.fromJson(Map<String, dynamic> json) => UserStats(
@@ -18,5 +19,6 @@ class UserStats with _$UserStats {
     level: (json['level'] as num?)?.toInt() ?? 1,
     currentStreak: (json['current_streak'] as num?)?.toInt() ?? 0,
     lastActivityDate: DateTime.parse(json['last_activity_date'] as String),
+    favoriteCount: (json['favorite_count'] as num?)?.toInt() ?? 0,
   );
 }

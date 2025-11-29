@@ -13,6 +13,7 @@ _$StudyStatisticsImpl _$$StudyStatisticsImplFromJson(
   masteredWords: (json['masteredWords'] as num).toInt(),
   learningWords: (json['learningWords'] as num).toInt(),
   streakDays: (json['streakDays'] as num).toInt(),
+  favoriteCount: (json['favoriteCount'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$$StudyStatisticsImplToJson(
@@ -22,4 +23,5 @@ Map<String, dynamic> _$$StudyStatisticsImplToJson(
   'masteredWords': instance.masteredWords,
   'learningWords': instance.learningWords,
   'streakDays': instance.streakDays,
+  'favoriteCount': instance.favoriteCount,
 };

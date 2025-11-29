@@ -17,11 +17,31 @@ class GamificationRepositoryImpl implements GamificationRepository {
   @override
   Future<UserStats> getUserStats() async {
     final userId = _supabase.auth.currentUser!.id;
+
+    // 1. Get base stats
     final response = await _supabase
         .from('user_stats')
         .select()
         .eq('user_id', userId)
         .maybeSingle();
+
+    // 2. Calculate favorite count
+    final globalFavoritesResponse = await _supabase
+        .from('user_progress')
+        .select('id') // Select minimal data
+        .eq('user_id', userId)
+        .eq('is_favorite', true)
+        .count(CountOption.exact);
+
+    final userFavoritesResponse = await _supabase
+        .from('user_words')
+        .select('id') // Select minimal data
+        .eq('user_id', userId)
+        .eq('is_favorite', true)
+        .count(CountOption.exact);
+
+    final totalFavorites =
+        (globalFavoritesResponse.count) + (userFavoritesResponse.count);
 
     if (response == null) {
       // Create default stats for existing user
@@ -45,10 +65,12 @@ class GamificationRepositoryImpl implements GamificationRepository {
           .eq('user_id', userId)
           .single();
 
-      return UserStats.fromJson(retryResponse);
+      return UserStats.fromJson(
+        retryResponse,
+      ).copyWith(favoriteCount: totalFavorites);
     }
 
-    return UserStats.fromJson(response);
+    return UserStats.fromJson(response).copyWith(favoriteCount: totalFavorites);
   }
 
   @override

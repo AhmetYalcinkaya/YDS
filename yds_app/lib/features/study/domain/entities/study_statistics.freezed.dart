@@ -25,6 +25,7 @@ mixin _$StudyStatistics {
   int get masteredWords => throw _privateConstructorUsedError;
   int get learningWords => throw _privateConstructorUsedError;
   int get streakDays => throw _privateConstructorUsedError;
+  int get favoriteCount => throw _privateConstructorUsedError;
 
   /// Serializes this StudyStatistics to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -48,6 +49,7 @@ abstract class $StudyStatisticsCopyWith<$Res> {
     int masteredWords,
     int learningWords,
     int streakDays,
+    int favoriteCount,
   });
 }
 
@@ -70,6 +72,7 @@ class _$StudyStatisticsCopyWithImpl<$Res, $Val extends StudyStatistics>
     Object? masteredWords = null,
     Object? learningWords = null,
     Object? streakDays = null,
+    Object? favoriteCount = null,
   }) {
     return _then(
       _value.copyWith(
@@ -88,6 +91,10 @@ class _$StudyStatisticsCopyWithImpl<$Res, $Val extends StudyStatistics>
             streakDays: null == streakDays
                 ? _value.streakDays
                 : streakDays // ignore: cast_nullable_to_non_nullable
+                      as int,
+            favoriteCount: null == favoriteCount
+                ? _value.favoriteCount
+                : favoriteCount // ignore: cast_nullable_to_non_nullable
                       as int,
           )
           as $Val,
@@ -109,6 +116,7 @@ abstract class _$$StudyStatisticsImplCopyWith<$Res>
     int masteredWords,
     int learningWords,
     int streakDays,
+    int favoriteCount,
   });
 }
 
@@ -130,6 +138,7 @@ class __$$StudyStatisticsImplCopyWithImpl<$Res>
     Object? masteredWords = null,
     Object? learningWords = null,
     Object? streakDays = null,
+    Object? favoriteCount = null,
   }) {
     return _then(
       _$StudyStatisticsImpl(
@@ -149,6 +158,10 @@ class __$$StudyStatisticsImplCopyWithImpl<$Res>
             ? _value.streakDays
             : streakDays // ignore: cast_nullable_to_non_nullable
                   as int,
+        favoriteCount: null == favoriteCount
+            ? _value.favoriteCount
+            : favoriteCount // ignore: cast_nullable_to_non_nullable
+                  as int,
       ),
     );
   }
@@ -162,6 +175,7 @@ class _$StudyStatisticsImpl implements _StudyStatistics {
     required this.masteredWords,
     required this.learningWords,
     required this.streakDays,
+    this.favoriteCount = 0,
   });
 
   factory _$StudyStatisticsImpl.fromJson(Map<String, dynamic> json) =>
@@ -175,10 +189,13 @@ class _$StudyStatisticsImpl implements _StudyStatistics {
   final int learningWords;
   @override
   final int streakDays;
+  @override
+  @JsonKey()
+  final int favoriteCount;
 
   @override
   String toString() {
-    return 'StudyStatistics(totalWordsStudied: $totalWordsStudied, masteredWords: $masteredWords, learningWords: $learningWords, streakDays: $streakDays)';
+    return 'StudyStatistics(totalWordsStudied: $totalWordsStudied, masteredWords: $masteredWords, learningWords: $learningWords, streakDays: $streakDays, favoriteCount: $favoriteCount)';
   }
 
   @override
@@ -193,7 +210,9 @@ class _$StudyStatisticsImpl implements _StudyStatistics {
             (identical(other.learningWords, learningWords) ||
                 other.learningWords == learningWords) &&
             (identical(other.streakDays, streakDays) ||
-                other.streakDays == streakDays));
+                other.streakDays == streakDays) &&
+            (identical(other.favoriteCount, favoriteCount) ||
+                other.favoriteCount == favoriteCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -204,6 +223,7 @@ class _$StudyStatisticsImpl implements _StudyStatistics {
     masteredWords,
     learningWords,
     streakDays,
+    favoriteCount,
   );
 
   /// Create a copy of StudyStatistics
@@ -229,6 +249,7 @@ abstract class _StudyStatistics implements StudyStatistics {
     required final int masteredWords,
     required final int learningWords,
     required final int streakDays,
+    final int favoriteCount,
   }) = _$StudyStatisticsImpl;
 
   factory _StudyStatistics.fromJson(Map<String, dynamic> json) =
@@ -242,6 +263,8 @@ abstract class _StudyStatistics implements StudyStatistics {
   int get learningWords;
   @override
   int get streakDays;
+  @override
+  int get favoriteCount;
 
   /// Create a copy of StudyStatistics
   /// with the given fields replaced by the non-null parameter values.

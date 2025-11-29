@@ -10,6 +10,7 @@ class StudyStatistics with _$StudyStatistics {
     required int masteredWords,
     required int learningWords,
     required int streakDays,
+    @Default(0) int favoriteCount,
   }) = _StudyStatistics;
 
   factory StudyStatistics.fromJson(Map<String, dynamic> json) =>

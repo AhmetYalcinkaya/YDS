@@ -213,7 +213,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     _buildStatCard(
                       context,
                       'Favoriler',
-                      '0', // Will be updated dynamically
+                      stats.favoriteCount.toString(),
                       Icons.star,
                       const Color(0xFFFFA726), // Amber
                       WordStatus.favorites,

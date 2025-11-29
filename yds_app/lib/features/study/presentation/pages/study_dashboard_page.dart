@@ -262,10 +262,12 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
       }
     } catch (e) {
       // Revert on error
-      setState(() {
-        _displayedWords.insert(0, word);
-        _completedToday--;
-      });
+      if (mounted) {
+        setState(() {
+          _displayedWords.insert(0, word);
+          _completedToday--;
+        });
+      }
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -391,11 +393,45 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
                 words: _displayedWords,
                 onWordRated: _handleWordRated,
                 onFavoriteToggle: (word) async {
-                  await ref
-                      .read(studyPlanRepositoryProvider)
-                      .toggleFavorite(word.id, isUserWord: word.isUserWord);
-                  // Refresh displayed words
-                  setState(() {});
+                  try {
+                    await ref
+                        .read(studyPlanRepositoryProvider)
+                        .toggleFavorite(word.id, isUserWord: word.isUserWord);
+
+                    // Update local state without reloading
+                    if (mounted) {
+                      setState(() {
+                        // Find and update the word in the list
+                        final index = _displayedWords.indexWhere(
+                          (w) => w.id == word.id,
+                        );
+                        if (index != -1) {
+                          _displayedWords[index] = _displayedWords[index]
+                              .copyWith(isFavorite: !word.isFavorite);
+                        }
+                      });
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            word.isFavorite
+                                ? 'Favorilerden çıkarıldı'
+                                : 'Favorilere eklendi',
+                          ),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Hata: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
                 },
               ),
             ),
