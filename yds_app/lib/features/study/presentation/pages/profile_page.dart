@@ -5,11 +5,13 @@ import 'package:yds_app/features/auth/presentation/providers/auth_provider.dart'
 import 'package:yds_app/features/study/domain/entities/study_statistics.dart';
 import 'package:yds_app/features/study/domain/repositories/study_plan_repository.dart';
 import 'package:yds_app/features/study/presentation/providers/study_plan_controller.dart';
-import '../../../gamification/domain/entities/user_stats.dart';
 import '../../../gamification/domain/entities/badge.dart' as game_badge;
 import '../../../gamification/data/repositories/gamification_repository_impl.dart';
 import '../../../gamification/presentation/widgets/level_progress_card.dart';
 import '../../../gamification/presentation/widgets/badges_grid.dart';
+import '../../../gamification/presentation/providers/gamification_provider.dart';
+import '../../../gamification/presentation/pages/leaderboard_page.dart';
+import 'statistics_page.dart';
 import 'word_list_page.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -22,7 +24,6 @@ class ProfilePage extends ConsumerStatefulWidget {
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   late Future<StudyStatistics> _statisticsFuture;
   late Future<Map<String, dynamic>?> _profileFuture;
-  late Future<UserStats> _userStatsFuture;
   late Future<List<game_badge.Badge>> _badgesFuture;
 
   @override
@@ -33,7 +34,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     _statisticsFuture = repo.getStatistics();
     _profileFuture = repo.getUserProfile();
-    _userStatsFuture = gameRepo.getUserStats();
     _badgesFuture = gameRepo.getBadges();
 
     // Check for new badges on profile load
@@ -108,14 +108,58 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             const SizedBox(height: 24),
 
             // Level Progress
-            FutureBuilder<UserStats>(
-              future: _userStatsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return LevelProgressCard(stats: snapshot.data!);
-                }
-                return const SizedBox.shrink();
+            Consumer(
+              builder: (context, ref, child) {
+                final userStatsAsync = ref.watch(userStatsProvider);
+                return userStatsAsync.when(
+                  data: (stats) => LevelProgressCard(stats: stats),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => const SizedBox.shrink(),
+                );
               },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Leaderboard Button
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const LeaderboardPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.leaderboard),
+              label: const Text('Liderlik Tablosu'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Statistics Button
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const StatisticsPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.bar_chart),
+              label: const Text('Detaylı İstatistikler'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
 
             const SizedBox(height: 24),
@@ -168,11 +212,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                     _buildStatCard(
                       context,
-                      'Seri',
-                      '${stats.streakDays} Gün',
-                      Icons.local_fire_department,
-                      const Color(0xFFFF5252), // Red
-                      WordStatus.all, // Streak doesn't have a specific list
+                      'Favoriler',
+                      '0', // Will be updated dynamically
+                      Icons.star,
+                      const Color(0xFFFFA726), // Amber
+                      WordStatus.favorites,
                     ),
                   ],
                 );

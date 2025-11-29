@@ -19,6 +19,14 @@ abstract class StudyPlanRepository {
   Future<List<StudyWord>> getWordsByStatus(WordStatus status);
   Future<void> deleteUserWord(String id);
   Future<void> updateUserWord(StudyWord word);
+
+  // Statistics methods
+  Future<Map<String, int>> getWeeklyProgress();
+  Future<Map<String, int>> getCategoryBreakdown();
+  Future<Map<String, int>> getDifficultyBreakdown();
+
+  // Favorites
+  Future<void> toggleFavorite(String wordId, {bool isUserWord = false});
 }
 
-enum WordStatus { all, mastered, learning }
+enum WordStatus { all, mastered, learning, favorites }

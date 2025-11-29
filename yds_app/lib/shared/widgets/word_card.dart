@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../features/study/domain/entities/study_word.dart';
+import '../../core/services/tts_service.dart';
 import 'flip_card_widget.dart';
 import 'difficulty_rating_widget.dart';
 
@@ -8,11 +9,13 @@ class WordCard extends StatelessWidget {
   const WordCard({
     required this.word,
     required this.onDifficultySelected,
+    this.onFavoriteToggle,
     super.key,
   });
 
   final StudyWord word;
   final void Function(Difficulty difficulty) onDifficultySelected;
+  final VoidCallback? onFavoriteToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +63,33 @@ class WordCard extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onPrimaryContainer,
               ),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.volume_up),
+                  onPressed: () {
+                    TtsService().speak(word.english);
+                  },
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  tooltip: 'Telaffuz dinle',
+                ),
+                if (onFavoriteToggle != null)
+                  IconButton(
+                    icon: Icon(
+                      word.isFavorite ? Icons.star : Icons.star_border,
+                    ),
+                    onPressed: onFavoriteToggle,
+                    color: word.isFavorite
+                        ? Colors.amber
+                        : Theme.of(context).colorScheme.onPrimaryContainer,
+                    tooltip: word.isFavorite
+                        ? 'Favorilerden çıkar'
+                        : 'Favorilere ekle',
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
             Row(
