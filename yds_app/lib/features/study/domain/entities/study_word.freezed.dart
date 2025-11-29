@@ -29,6 +29,7 @@ mixin _$StudyWord {
   bool get isUserWord => throw _privateConstructorUsedError;
   String get category => throw _privateConstructorUsedError;
   String get difficultyLevel => throw _privateConstructorUsedError;
+  bool get isFavorite => throw _privateConstructorUsedError;
 
   /// Serializes this StudyWord to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -54,6 +55,7 @@ abstract class $StudyWordCopyWith<$Res> {
     bool isUserWord,
     String category,
     String difficultyLevel,
+    bool isFavorite,
   });
 }
 
@@ -80,6 +82,7 @@ class _$StudyWordCopyWithImpl<$Res, $Val extends StudyWord>
     Object? isUserWord = null,
     Object? category = null,
     Object? difficultyLevel = null,
+    Object? isFavorite = null,
   }) {
     return _then(
       _value.copyWith(
@@ -115,6 +118,10 @@ class _$StudyWordCopyWithImpl<$Res, $Val extends StudyWord>
                 ? _value.difficultyLevel
                 : difficultyLevel // ignore: cast_nullable_to_non_nullable
                       as String,
+            isFavorite: null == isFavorite
+                ? _value.isFavorite
+                : isFavorite // ignore: cast_nullable_to_non_nullable
+                      as bool,
           )
           as $Val,
     );
@@ -139,6 +146,7 @@ abstract class _$$StudyWordImplCopyWith<$Res>
     bool isUserWord,
     String category,
     String difficultyLevel,
+    bool isFavorite,
   });
 }
 
@@ -164,6 +172,7 @@ class __$$StudyWordImplCopyWithImpl<$Res>
     Object? isUserWord = null,
     Object? category = null,
     Object? difficultyLevel = null,
+    Object? isFavorite = null,
   }) {
     return _then(
       _$StudyWordImpl(
@@ -199,6 +208,10 @@ class __$$StudyWordImplCopyWithImpl<$Res>
             ? _value.difficultyLevel
             : difficultyLevel // ignore: cast_nullable_to_non_nullable
                   as String,
+        isFavorite: null == isFavorite
+            ? _value.isFavorite
+            : isFavorite // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -216,6 +229,7 @@ class _$StudyWordImpl implements _StudyWord {
     this.isUserWord = false,
     this.category = 'noun',
     this.difficultyLevel = 'B1',
+    this.isFavorite = false,
   });
 
   factory _$StudyWordImpl.fromJson(Map<String, dynamic> json) =>
@@ -241,10 +255,13 @@ class _$StudyWordImpl implements _StudyWord {
   @override
   @JsonKey()
   final String difficultyLevel;
+  @override
+  @JsonKey()
+  final bool isFavorite;
 
   @override
   String toString() {
-    return 'StudyWord(id: $id, english: $english, turkish: $turkish, exampleSentence: $exampleSentence, masteryScore: $masteryScore, isUserWord: $isUserWord, category: $category, difficultyLevel: $difficultyLevel)';
+    return 'StudyWord(id: $id, english: $english, turkish: $turkish, exampleSentence: $exampleSentence, masteryScore: $masteryScore, isUserWord: $isUserWord, category: $category, difficultyLevel: $difficultyLevel, isFavorite: $isFavorite)';
   }
 
   @override
@@ -264,7 +281,9 @@ class _$StudyWordImpl implements _StudyWord {
             (identical(other.category, category) ||
                 other.category == category) &&
             (identical(other.difficultyLevel, difficultyLevel) ||
-                other.difficultyLevel == difficultyLevel));
+                other.difficultyLevel == difficultyLevel) &&
+            (identical(other.isFavorite, isFavorite) ||
+                other.isFavorite == isFavorite));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -279,6 +298,7 @@ class _$StudyWordImpl implements _StudyWord {
     isUserWord,
     category,
     difficultyLevel,
+    isFavorite,
   );
 
   /// Create a copy of StudyWord
@@ -305,6 +325,7 @@ abstract class _StudyWord implements StudyWord {
     final bool isUserWord,
     final String category,
     final String difficultyLevel,
+    final bool isFavorite,
   }) = _$StudyWordImpl;
 
   factory _StudyWord.fromJson(Map<String, dynamic> json) =
@@ -326,6 +347,8 @@ abstract class _StudyWord implements StudyWord {
   String get category;
   @override
   String get difficultyLevel;
+  @override
+  bool get isFavorite;
 
   /// Create a copy of StudyWord
   /// with the given fields replaced by the non-null parameter values.

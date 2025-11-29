@@ -16,6 +16,7 @@ _$StudyWordImpl _$$StudyWordImplFromJson(Map<String, dynamic> json) =>
       isUserWord: json['isUserWord'] as bool? ?? false,
       category: json['category'] as String? ?? 'noun',
       difficultyLevel: json['difficultyLevel'] as String? ?? 'B1',
+      isFavorite: json['isFavorite'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$StudyWordImplToJson(_$StudyWordImpl instance) =>
@@ -28,4 +29,5 @@ Map<String, dynamic> _$$StudyWordImplToJson(_$StudyWordImpl instance) =>
       'isUserWord': instance.isUserWord,
       'category': instance.category,
       'difficultyLevel': instance.difficultyLevel,
+      'isFavorite': instance.isFavorite,
     };

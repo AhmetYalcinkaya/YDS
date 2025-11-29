@@ -161,6 +161,7 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
       isUserWord: isUserWord,
       category: (data['category'] as String?) ?? 'noun',
       difficultyLevel: (data['difficulty_level'] as String?) ?? 'B1',
+      isFavorite: (data['is_favorite'] as bool?) ?? false,
     );
   }
 
@@ -307,6 +308,8 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
       query = query.gt('interval', 14);
     } else if (status == WordStatus.learning) {
       query = query.lte('interval', 14);
+    } else if (status == WordStatus.favorites) {
+      query = query.eq('is_favorite', true);
     }
 
     final progressResponse = await query;
@@ -373,5 +376,182 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
         })
         .eq('id', word.id)
         .eq('user_id', userId);
+  }
+
+  @override
+  Future<Map<String, int>> getWeeklyProgress() async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) return {};
+
+    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+
+    final response = await _supabaseClient
+        .from('user_progress')
+        .select('created_at')
+        .eq('user_id', userId)
+        .gte('created_at', sevenDaysAgo.toIso8601String());
+
+    final progressList = response as List;
+    final Map<String, int> dailyCounts = {};
+
+    for (var i = 0; i < 7; i++) {
+      final date = DateTime.now().subtract(Duration(days: 6 - i));
+      final dateKey =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      dailyCounts[dateKey] = 0;
+    }
+
+    for (var item in progressList) {
+      final createdAt = DateTime.parse(item['created_at'] as String);
+      final dateKey =
+          '${createdAt.year}-${createdAt.month.toString().padLeft(2, '0')}-${createdAt.day.toString().padLeft(2, '0')}';
+      if (dailyCounts.containsKey(dateKey)) {
+        dailyCounts[dateKey] = dailyCounts[dateKey]! + 1;
+      }
+    }
+
+    return dailyCounts;
+  }
+
+  @override
+  Future<Map<String, int>> getCategoryBreakdown() async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) return {};
+
+    final progressResponse = await _supabaseClient
+        .from('user_progress')
+        .select('word_id, user_word_id')
+        .eq('user_id', userId);
+
+    final globalWordIds = (progressResponse as List)
+        .where((e) => e['word_id'] != null)
+        .map((e) => e['word_id'] as String)
+        .toList();
+
+    final userWordIds = (progressResponse)
+        .where((e) => e['user_word_id'] != null)
+        .map((e) => e['user_word_id'] as String)
+        .toList();
+
+    final Map<String, int> categoryCount = {};
+
+    if (globalWordIds.isNotEmpty) {
+      final response = await _supabaseClient
+          .from('words')
+          .select('category')
+          .inFilter('id', globalWordIds);
+
+      for (var item in response as List) {
+        final category = item['category'] as String? ?? 'other';
+        categoryCount[category] = (categoryCount[category] ?? 0) + 1;
+      }
+    }
+
+    if (userWordIds.isNotEmpty) {
+      final response = await _supabaseClient
+          .from('user_words')
+          .select('category')
+          .inFilter('id', userWordIds);
+
+      for (var item in response as List) {
+        final category = item['category'] as String? ?? 'other';
+        categoryCount[category] = (categoryCount[category] ?? 0) + 1;
+      }
+    }
+
+    return categoryCount;
+  }
+
+  @override
+  Future<Map<String, int>> getDifficultyBreakdown() async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) return {};
+
+    final progressResponse = await _supabaseClient
+        .from('user_progress')
+        .select('word_id, user_word_id')
+        .eq('user_id', userId);
+
+    final globalWordIds = (progressResponse as List)
+        .where((e) => e['word_id'] != null)
+        .map((e) => e['word_id'] as String)
+        .toList();
+
+    final userWordIds = (progressResponse)
+        .where((e) => e['user_word_id'] != null)
+        .map((e) => e['user_word_id'] as String)
+        .toList();
+
+    final Map<String, int> difficultyCount = {};
+
+    if (globalWordIds.isNotEmpty) {
+      final response = await _supabaseClient
+          .from('words')
+          .select('difficulty_level')
+          .inFilter('id', globalWordIds);
+
+      for (var item in response as List) {
+        final difficulty = item['difficulty_level'] as String? ?? 'B1';
+        difficultyCount[difficulty] = (difficultyCount[difficulty] ?? 0) + 1;
+      }
+    }
+
+    if (userWordIds.isNotEmpty) {
+      final response = await _supabaseClient
+          .from('user_words')
+          .select('difficulty_level')
+          .inFilter('id', userWordIds);
+
+      for (var item in response as List) {
+        final difficulty = item['difficulty_level'] as String? ?? 'B1';
+        difficultyCount[difficulty] = (difficultyCount[difficulty] ?? 0) + 1;
+      }
+    }
+
+    return difficultyCount;
+  }
+
+  @override
+  Future<void> toggleFavorite(String wordId, {bool isUserWord = false}) async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) return;
+
+    if (isUserWord) {
+      // Toggle favorite for user word
+      final currentResponse = await _supabaseClient
+          .from('user_words')
+          .select('is_favorite')
+          .eq('id', wordId)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (currentResponse != null) {
+        final currentFavorite =
+            currentResponse['is_favorite'] as bool? ?? false;
+        await _supabaseClient
+            .from('user_words')
+            .update({'is_favorite': !currentFavorite})
+            .eq('id', wordId)
+            .eq('user_id', userId);
+      }
+    } else {
+      // Toggle favorite for global word
+      final currentResponse = await _supabaseClient
+          .from('user_progress')
+          .select('is_favorite')
+          .eq('word_id', wordId)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (currentResponse != null) {
+        final currentFavorite =
+            currentResponse['is_favorite'] as bool? ?? false;
+        await _supabaseClient
+            .from('user_progress')
+            .update({'is_favorite': !currentFavorite})
+            .eq('word_id', wordId)
+            .eq('user_id', userId);
+      }
+    }
   }
 }
