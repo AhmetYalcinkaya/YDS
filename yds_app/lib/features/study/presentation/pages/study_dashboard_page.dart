@@ -3,13 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/study_plan.dart';
 import '../../domain/entities/study_word.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/network/supabase_client_provider.dart';
 import '../providers/study_plan_controller.dart';
-import '../widgets/study_progress_header.dart';
 import '../widgets/word_list_view.dart';
 import '../../../../shared/widgets/difficulty_rating_widget.dart';
-import 'profile_page.dart';
+import '../../../gamification/data/repositories/gamification_repository_impl.dart';
+import '../../../gamification/presentation/providers/gamification_provider.dart';
 
 /// Ana çalışma ekranı; günlük hedef, ilerleme ve kelime kartlarını gösterir.
 class StudyDashboardPage extends ConsumerWidget {
@@ -161,6 +160,17 @@ class StudyDashboardPage extends ConsumerWidget {
                           'category': category,
                           'difficulty_level': difficultyLevel,
                         });
+
+                    // Award XP for adding a word
+                    await ref.read(gamificationRepositoryProvider).addXp(20);
+                    // Check for badges (e.g. Newbie)
+                    await ref
+                        .read(gamificationRepositoryProvider)
+                        .checkAndAwardBadges();
+
+                    // Refresh user stats
+                    ref.invalidate(userStatsProvider);
+
                     if (context.mounted) {
                       Navigator.pop(context, true);
                     }
@@ -236,6 +246,14 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
           .read(studyPlanRepositoryProvider)
           .updateProgress(word.id, difficulty, isUserWord: word.isUserWord);
 
+      // Award XP for studying
+      await ref.read(gamificationRepositoryProvider).addXp(5);
+      // Check for badges
+      await ref.read(gamificationRepositoryProvider).checkAndAwardBadges();
+
+      // Refresh user stats
+      ref.invalidate(userStatsProvider);
+
       // Check if goal is reached (only show dialog once)
       if (_completedToday == _dailyTarget && !_isShowingGoalDialog && mounted) {
         _isShowingGoalDialog = true;
@@ -296,6 +314,14 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
           setState(() {
             _displayedWords.addAll(remainingWords.take(10));
           });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('10 yeni kelime eklendi! Başarılar!'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
         } else {
           // If no remaining words, reload the plan
           ref.read(studyPlanControllerProvider.notifier).loadPlan().then((_) {
@@ -304,6 +330,14 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
               setState(() {
                 _displayedWords.addAll(newPlan.dueWords.take(10));
               });
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('10 yeni kelime eklendi! Başarılar!'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
             });
           });
         }
@@ -356,6 +390,13 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
               child: WordListView(
                 words: _displayedWords,
                 onWordRated: _handleWordRated,
+                onFavoriteToggle: (word) async {
+                  await ref
+                      .read(studyPlanRepositoryProvider)
+                      .toggleFavorite(word.id, isUserWord: word.isUserWord);
+                  // Refresh displayed words
+                  setState(() {});
+                },
               ),
             ),
           ],

@@ -9,11 +9,13 @@ class WordListView extends StatelessWidget {
   const WordListView({
     required this.words,
     required this.onWordRated,
+    this.onFavoriteToggle,
     super.key,
   });
 
   final List<StudyWord> words;
   final void Function(StudyWord word, Difficulty difficulty) onWordRated;
+  final void Function(StudyWord word)? onFavoriteToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +30,9 @@ class WordListView extends StatelessWidget {
         return WordCard(
           word: word,
           onDifficultySelected: (difficulty) => onWordRated(word, difficulty),
+          onFavoriteToggle: onFavoriteToggle != null
+              ? () => onFavoriteToggle!(word)
+              : null,
         );
       },
     );
