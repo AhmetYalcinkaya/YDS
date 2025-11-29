@@ -4,6 +4,8 @@ import '../../data/quiz_generator.dart';
 import '../../domain/entities/quiz_question.dart';
 import '../../domain/entities/quiz_result.dart';
 import '../../../study/presentation/providers/study_plan_controller.dart';
+import '../../../gamification/data/repositories/gamification_repository_impl.dart';
+import '../../../gamification/presentation/providers/gamification_provider.dart';
 import 'quiz_result_page.dart';
 
 /// Main quiz gameplay page
@@ -287,11 +289,19 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     }
   }
 
-  void _showResults() {
+  Future<void> _showResults() async {
     final timeTaken = DateTime.now().difference(_startTime);
     final correctAnswers = _userAnswers.asMap().entries.where((entry) {
       return entry.value == _questions![entry.key].correctIndex;
     }).length;
+
+    // Award XP and check badges
+    final earnedBadges = await _awardQuizRewards(
+      correctAnswers,
+      _questions!.length,
+    );
+
+    if (!mounted) return;
 
     final result = QuizResult(
       totalQuestions: _questions!.length,
@@ -305,8 +315,32 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute<void>(
-        builder: (context) => QuizResultPage(result: result),
+        builder: (context) =>
+            QuizResultPage(result: result, earnedBadges: earnedBadges),
       ),
     );
+  }
+
+  Future<List<String>> _awardQuizRewards(
+    int correctAnswers,
+    int totalQuestions,
+  ) async {
+    final earnedBadges = <String>[];
+    if (correctAnswers > 0) {
+      // 10 XP per correct answer
+      final xpEarned = correctAnswers * 10;
+      await ref.read(gamificationRepositoryProvider).addXp(xpEarned);
+
+      // Check for quiz badges
+      final badges = await ref
+          .read(gamificationRepositoryProvider)
+          .checkQuizBadges(correctAnswers, totalQuestions);
+
+      earnedBadges.addAll(badges);
+
+      // Refresh user stats
+      ref.invalidate(userStatsProvider);
+    }
+    return earnedBadges;
   }
 }
