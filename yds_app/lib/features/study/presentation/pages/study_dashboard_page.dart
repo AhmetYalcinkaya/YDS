@@ -234,11 +234,8 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
   }
 
   Future<void> _handleWordRated(StudyWord word, Difficulty difficulty) async {
-    // Optimistic UI update - remove word immediately
-    setState(() {
-      _displayedWords.removeWhere((w) => w.id == word.id);
-      _completedToday++;
-    });
+    // Optimistic UI update via controller
+    ref.read(studyPlanControllerProvider.notifier).markAsStudied(word.id);
 
     try {
       // Update progress in Supabase in background
@@ -255,19 +252,21 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
       ref.invalidate(userStatsProvider);
 
       // Check if goal is reached (only show dialog once)
-      if (_completedToday == _dailyTarget && !_isShowingGoalDialog && mounted) {
-        _isShowingGoalDialog = true;
-        await _showGoalCompletedDialog();
-        _isShowingGoalDialog = false;
+      // We use the updated plan from the controller to check progress
+      final currentPlan = ref.read(studyPlanControllerProvider).value;
+      if (currentPlan != null) {
+        if (currentPlan.completedToday >= currentPlan.dailyTarget &&
+            !_isShowingGoalDialog &&
+            mounted) {
+          _isShowingGoalDialog = true;
+          await _showGoalCompletedDialog();
+          _isShowingGoalDialog = false;
+        }
       }
     } catch (e) {
-      // Revert on error
-      if (mounted) {
-        setState(() {
-          _displayedWords.insert(0, word);
-          _completedToday--;
-        });
-      }
+      // Revert on error - reload plan to restore state
+      ref.read(studyPlanControllerProvider.notifier).loadPlan();
+
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -299,51 +298,36 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
     );
 
     if (result == true) {
-      // User wants to continue - increase target by 10
+      // User wants to continue - increase target by 10 and load more words
       setState(() {
         _dailyTarget += 10;
       });
 
-      // Get current plan state
-      final planState = ref.read(studyPlanControllerProvider);
+      // Update controller state
+      ref
+          .read(studyPlanControllerProvider.notifier)
+          .updateDailyTarget(_dailyTarget);
 
-      planState.whenData((currentPlan) {
-        final remainingWords = currentPlan.dueWords
-            .where((w) => !_displayedWords.any((dw) => dw.id == w.id))
-            .toList();
+      // Update target in DB directly to avoid triggering loadPlan via _handleDailyTargetChanged
+      try {
+        await ref
+            .read(studyPlanRepositoryProvider)
+            .updateDailyTarget(_dailyTarget);
+      } catch (e) {
+        debugPrint('Error saving daily target: $e');
+      }
 
-        if (remainingWords.isNotEmpty) {
-          setState(() {
-            _displayedWords.addAll(remainingWords.take(10));
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('10 yeni kelime eklendi! Başarılar!'),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-        } else {
-          // If no remaining words, reload the plan
-          ref.read(studyPlanControllerProvider.notifier).loadPlan().then((_) {
-            final newPlanState = ref.read(studyPlanControllerProvider);
-            newPlanState.whenData((newPlan) {
-              setState(() {
-                _displayedWords.addAll(newPlan.dueWords.take(10));
-              });
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('10 yeni kelime eklendi! Başarılar!'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              }
-            });
-          });
-        }
-      });
+      // Load more words
+      await ref.read(studyPlanControllerProvider.notifier).loadMoreWords(10);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('10 yeni kelime eklendi! Başarılar!'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -351,6 +335,9 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
     setState(() {
       _dailyTarget = newTarget;
     });
+
+    // Update controller state
+    ref.read(studyPlanControllerProvider.notifier).updateDailyTarget(newTarget);
 
     // Save to DB
     try {

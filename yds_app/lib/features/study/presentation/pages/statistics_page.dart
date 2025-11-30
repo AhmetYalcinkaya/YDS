@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/repositories/study_plan_repository.dart';
+
 import '../providers/study_plan_controller.dart';
 
 class StatisticsPage extends ConsumerStatefulWidget {
