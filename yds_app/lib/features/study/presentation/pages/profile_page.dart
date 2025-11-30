@@ -126,7 +126,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             FilledButton.icon(
               onPressed: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (context) => const LeaderboardPage(),
                   ),
                 );
@@ -218,6 +218,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       const Color(0xFFFFA726), // Amber
                       WordStatus.favorites,
                     ),
+                    _buildStatCard(
+                      context,
+                      'Seri',
+                      '${stats.streakDays} Gün',
+                      Icons.local_fire_department,
+                      const Color(0xFFFF5722), // Deep Orange
+                      WordStatus
+                          .all, // Streak doesn't have a specific word list, so 'all' is a placeholder
+                    ),
                   ],
                 );
               },
@@ -300,7 +309,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(
+          MaterialPageRoute<void>(
             builder: (context) => WordListPage(status: status, title: title),
           ),
         );

@@ -96,8 +96,32 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     }
 
     // 3. If we need more words to reach daily target, fetch new words
-    List<StudyWord> newWords = [];
     final neededCount = dailyTarget - dueWords.length;
+    if (neededCount > 0) {
+      final newWords = await fetchNewWords(neededCount);
+      dueWords.addAll(newWords);
+    } else {
+      // Always fetch at least 5 newest user words if available even if target reached
+      final newWords = await fetchNewWords(5);
+      final uniqueNewWords = newWords
+          .where((nw) => !dueWords.any((dw) => dw.id == nw.id))
+          .toList();
+      dueWords.addAll(uniqueNewWords);
+    }
+
+    return StudyPlan(
+      dailyTarget: dailyTarget,
+      dueWords: dueWords,
+      completedToday: 0,
+    );
+  }
+
+  @override
+  Future<List<StudyWord>> fetchNewWords(int count) async {
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) return [];
+
+    List<StudyWord> newWords = [];
 
     // Fetch all progress word IDs to exclude
     final allProgressResponse = await _supabaseClient
@@ -132,9 +156,8 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
       ascending: false,
     );
 
-    // Always fetch at least 5 newest user words if available, or fill neededCount
-    final fetchCount = neededCount > 0 ? neededCount : 5;
-    final newUserWordsResponse = await userWordsOrdered.limit(fetchCount);
+    // Fetch user words
+    final newUserWordsResponse = await userWordsOrdered.limit(count);
     final newUserWords = (newUserWordsResponse as List)
         .map((data) => _mapToStudyWord(data, true))
         .toList();
@@ -142,7 +165,7 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     newWords.addAll(newUserWords);
 
     // If still need more, fetch global words
-    final remainingCount = neededCount - newWords.length;
+    final remainingCount = count - newWords.length;
     if (remainingCount > 0) {
       var globalWordsQuery = _supabaseClient.from('words').select();
       if (excludeGlobalIds.isNotEmpty) {
@@ -152,6 +175,7 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
           '(${excludeGlobalIds.join(',')})',
         );
       }
+
       final newGlobalWordsResponse = await globalWordsQuery.limit(
         remainingCount,
       );
@@ -162,11 +186,7 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
       newWords.addAll(newGlobalWords);
     }
 
-    return StudyPlan(
-      dueWords: [...dueWords, ...newWords],
-      dailyTarget: dailyTarget,
-      completedToday: 0,
-    );
+    return newWords;
   }
 
   StudyWord _mapToStudyWord(Map<String, dynamic> data, bool isUserWord) {
@@ -229,6 +249,9 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     } else {
       await _supabaseClient.from('user_progress').insert(data);
     }
+
+    // Update streak
+    await _updateUserStreak(userId);
   }
 
   @override
@@ -258,8 +281,21 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     // 3. Learning words (total - mastered)
     final learningWords = totalWords - masteredWords;
 
-    // 4. Streak (Placeholder for now)
-    const streakDays = 0;
+    // 4. Streak
+    int streakDays = 0;
+    try {
+      final userResponse = await _supabaseClient
+          .from('users')
+          .select('streak')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (userResponse != null && userResponse['streak'] != null) {
+        streakDays = userResponse['streak'] as int;
+      }
+    } catch (e) {
+      // Ignore error
+    }
 
     // 5. Favorites
     final globalFavoritesResponse = await _supabaseClient
@@ -286,6 +322,62 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
       streakDays: streakDays,
       favoriteCount: favoriteCount,
     );
+  }
+
+  Future<void> _updateUserStreak(String userId) async {
+    try {
+      final userResponse = await _supabaseClient
+          .from('users')
+          .select('last_study_date, streak')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (userResponse == null) return;
+
+      final lastStudyDateStr = userResponse['last_study_date'] as String?;
+      final currentStreak = (userResponse['streak'] as int?) ?? 0;
+
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      DateTime? lastStudyDate;
+      if (lastStudyDateStr != null) {
+        lastStudyDate = DateTime.parse(lastStudyDateStr);
+        // Normalize to date only
+        lastStudyDate = DateTime(
+          lastStudyDate.year,
+          lastStudyDate.month,
+          lastStudyDate.day,
+        );
+      }
+
+      int newStreak = currentStreak;
+
+      if (lastStudyDate == null) {
+        // First time studying
+        newStreak = 1;
+      } else if (lastStudyDate == today) {
+        // Already studied today, do nothing
+        return;
+      } else if (lastStudyDate == today.subtract(const Duration(days: 1))) {
+        // Studied yesterday, increment streak
+        newStreak++;
+      } else {
+        // Missed a day (or more), reset streak
+        newStreak = 1;
+      }
+
+      await _supabaseClient
+          .from('users')
+          .update({
+            'last_study_date': today.toIso8601String(),
+            'streak': newStreak,
+          })
+          .eq('id', userId);
+    } catch (e) {
+      // Ignore error to not block study flow
+      print('Error updating streak: $e');
+    }
   }
 
   @override

@@ -8,6 +8,7 @@ import '../entities/study_statistics.dart';
 /// Repository arayüzü: günlük çalışma planını yükler.
 abstract class StudyPlanRepository {
   Future<StudyPlan> loadDailyPlan();
+  Future<List<StudyWord>> fetchNewWords(int count);
   Future<void> updateProgress(
     String wordId,
     Difficulty difficulty, {
