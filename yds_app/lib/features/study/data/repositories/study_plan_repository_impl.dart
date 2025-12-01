@@ -38,11 +38,13 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     }
 
     // 1. Fetch words due for review (where next_review_date <= now)
+    // Limit to dailyTarget to avoid loading too many words
     final dueProgressResponse = await _supabaseClient
         .from('user_progress')
         .select('word_id, user_word_id, is_favorite')
         .eq('user_id', userId)
-        .lte('next_review_date', DateTime.now().toIso8601String());
+        .lte('next_review_date', DateTime.now().toIso8601String())
+        .limit(dailyTarget);
 
     // Create maps to store favorite status
     final Map<String, bool> globalWordFavorites = {};
@@ -100,19 +102,29 @@ class StudyPlanRepositoryImpl implements StudyPlanRepository {
     if (neededCount > 0) {
       final newWords = await fetchNewWords(neededCount);
       dueWords.addAll(newWords);
-    } else {
-      // Always fetch at least 5 newest user words if available even if target reached
-      final newWords = await fetchNewWords(5);
-      final uniqueNewWords = newWords
-          .where((nw) => !dueWords.any((dw) => dw.id == nw.id))
-          .toList();
-      dueWords.addAll(uniqueNewWords);
+    }
+
+    // Calculate how many words were studied today
+    int completedToday = 0;
+    try {
+      final today = DateTime.now();
+      final startOfDay = DateTime(today.year, today.month, today.day);
+
+      final todayProgressResponse = await _supabaseClient
+          .from('user_progress')
+          .select('id')
+          .eq('user_id', userId)
+          .gte('created_at', startOfDay.toIso8601String());
+
+      completedToday = (todayProgressResponse as List).length;
+    } catch (e) {
+      // Ignore error, default to 0
     }
 
     return StudyPlan(
       dailyTarget: dailyTarget,
       dueWords: dueWords,
-      completedToday: 0,
+      completedToday: completedToday,
     );
   }
 

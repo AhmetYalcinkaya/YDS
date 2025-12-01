@@ -36,12 +36,12 @@ class WordListView extends StatelessWidget {
                   ? () => onFavoriteToggle!(word)
                   : null,
             )
-            .animate(delay: (100 * index).ms)
-            .fadeIn(duration: 500.ms, curve: Curves.easeOut)
+            .animate(delay: index < 5 ? (100 * index).ms : 0.ms)
+            .fadeIn(duration: 300.ms, curve: Curves.easeOut)
             .slideX(
               begin: 0.2,
               end: 0,
-              duration: 500.ms,
+              duration: 300.ms,
               curve: Curves.easeOut,
             );
       },

@@ -245,7 +245,13 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
   }
 
   Future<void> _handleWordRated(StudyWord word, Difficulty difficulty) async {
-    // Optimistic UI update via controller
+    // Optimistic UI update - remove from local state immediately
+    setState(() {
+      _displayedWords = _displayedWords.where((w) => w.id != word.id).toList();
+      _completedToday++;
+    });
+
+    // Update controller state
     ref.read(studyPlanControllerProvider.notifier).markAsStudied(word.id);
 
     try {
@@ -263,16 +269,10 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
       ref.invalidate(userStatsProvider);
 
       // Check if goal is reached (only show dialog once)
-      // We use the updated plan from the controller to check progress
-      final currentPlan = ref.read(studyPlanControllerProvider).value;
-      if (currentPlan != null) {
-        if (currentPlan.completedToday >= currentPlan.dailyTarget &&
-            !_isShowingGoalDialog &&
-            mounted) {
-          _isShowingGoalDialog = true;
-          await _showGoalCompletedDialog();
-          _isShowingGoalDialog = false;
-        }
+      if (_completedToday >= _dailyTarget && !_isShowingGoalDialog && mounted) {
+        _isShowingGoalDialog = true;
+        await _showGoalCompletedDialog();
+        _isShowingGoalDialog = false;
       }
     } catch (e) {
       // Revert on error - reload plan to restore state
@@ -331,6 +331,14 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
 
       // Load more words
       await ref.read(studyPlanControllerProvider.notifier).loadMoreWords(10);
+
+      // Force state sync
+      final updatedPlan = ref.read(studyPlanControllerProvider).value;
+      if (updatedPlan != null && mounted) {
+        setState(() {
+          _displayedWords = List.from(updatedPlan.dueWords);
+        });
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
