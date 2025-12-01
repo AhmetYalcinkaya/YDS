@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../features/study/domain/entities/study_word.dart';
 import '../../core/services/tts_service.dart';
 import 'flip_card_widget.dart';
@@ -102,16 +103,33 @@ class WordCard extends StatelessWidget {
             Positioned(
               top: 8,
               right: 8,
-              child: IconButton(
-                icon: Icon(word.isFavorite ? Icons.star : Icons.star_border),
-                onPressed: onFavoriteToggle,
-                color: word.isFavorite
-                    ? Colors.amber
-                    : Theme.of(context).colorScheme.onPrimaryContainer,
-                tooltip: word.isFavorite
-                    ? 'Favorilerden çıkar'
-                    : 'Favorilere ekle',
-              ),
+              child:
+                  IconButton(
+                        icon: Icon(
+                          word.isFavorite ? Icons.star : Icons.star_border,
+                        ),
+                        onPressed: onFavoriteToggle,
+                        color: word.isFavorite
+                            ? Colors.amber
+                            : Theme.of(context).colorScheme.onPrimaryContainer,
+                        tooltip: word.isFavorite
+                            ? 'Favorilerden çıkar'
+                            : 'Favorilere ekle',
+                      )
+                      .animate(target: word.isFavorite ? 1 : 0)
+                      .scale(
+                        begin: const Offset(1, 1),
+                        end: const Offset(1.2, 1.2),
+                        duration: 200.ms,
+                        curve: Curves.easeInOut,
+                      )
+                      .then()
+                      .scale(
+                        begin: const Offset(1.2, 1.2),
+                        end: const Offset(1, 1),
+                        duration: 200.ms,
+                        curve: Curves.easeInOut,
+                      ),
             ),
         ],
       ),
