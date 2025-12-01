@@ -47,5 +47,9 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Microphone access is required for audio pronunciation features in the app.</string>
+		<key>NSLocalNetworkUsageDescription</key>
+		<string>Network access is required to sync your learning progress.</string>
 	</dict>
 </plist>
