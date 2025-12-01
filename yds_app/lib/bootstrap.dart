@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'core/env/app_environment.dart';
+import 'core/services/notification_service.dart';
 
 /// Ortak bootstrap akışı: env dosyasını yükler, Supabase'i başlatır ve uygulamayı çalıştırır.
 Future<void> bootstrap() async {
@@ -21,6 +22,8 @@ Future<void> bootstrap() async {
     url: AppEnvironment.supabaseUrl,
     anonKey: AppEnvironment.supabaseAnonKey,
   );
+
+  await NotificationService().init();
 
   runApp(const ProviderScope(child: YdsApp()));
 }
