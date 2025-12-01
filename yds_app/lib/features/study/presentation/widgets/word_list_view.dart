@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../domain/entities/study_word.dart';
 import '../../../../shared/widgets/word_card.dart';
@@ -28,12 +29,21 @@ class WordListView extends StatelessWidget {
       itemBuilder: (context, index) {
         final word = words[index];
         return WordCard(
-          word: word,
-          onDifficultySelected: (difficulty) => onWordRated(word, difficulty),
-          onFavoriteToggle: onFavoriteToggle != null
-              ? () => onFavoriteToggle!(word)
-              : null,
-        );
+              word: word,
+              onDifficultySelected: (difficulty) =>
+                  onWordRated(word, difficulty),
+              onFavoriteToggle: onFavoriteToggle != null
+                  ? () => onFavoriteToggle!(word)
+                  : null,
+            )
+            .animate(delay: (100 * index).ms)
+            .fadeIn(duration: 500.ms, curve: Curves.easeOut)
+            .slideX(
+              begin: 0.2,
+              end: 0,
+              duration: 500.ms,
+              curve: Curves.easeOut,
+            );
       },
     );
   }

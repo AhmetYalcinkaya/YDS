@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:confetti/confetti.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/study_plan.dart';
@@ -214,6 +215,7 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
   late int _completedToday;
   late int _dailyTarget;
   bool _isShowingGoalDialog = false;
+  late ConfettiController _confettiController;
 
   @override
   void initState() {
@@ -221,6 +223,15 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
     _displayedWords = List.from(widget.plan.dueWords);
     _completedToday = widget.plan.completedToday;
     _dailyTarget = widget.plan.dailyTarget;
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
   }
 
   @override
@@ -276,6 +287,7 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
   }
 
   Future<void> _showGoalCompletedDialog() async {
+    _confettiController.play();
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -361,70 +373,90 @@ class _DashboardBodyState extends ConsumerState<_DashboardBody> {
       completedToday: _completedToday,
     );
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            _buildDailyProgressCard(context, currentPlan),
-            const SizedBox(height: 24),
-            Text(
-              'Bugünün Kelimeleri',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: WordListView(
-                words: _displayedWords,
-                onWordRated: _handleWordRated,
-                onFavoriteToggle: (word) async {
-                  try {
-                    await ref
-                        .read(studyPlanRepositoryProvider)
-                        .toggleFavorite(word.id, isUserWord: word.isUserWord);
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                _buildDailyProgressCard(context, currentPlan),
+                const SizedBox(height: 24),
+                Text(
+                  'Bugünün Kelimeleri',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: WordListView(
+                    words: _displayedWords,
+                    onWordRated: _handleWordRated,
+                    onFavoriteToggle: (word) async {
+                      try {
+                        await ref
+                            .read(studyPlanRepositoryProvider)
+                            .toggleFavorite(
+                              word.id,
+                              isUserWord: word.isUserWord,
+                            );
 
-                    // Update local state without reloading
-                    if (mounted) {
-                      setState(() {
-                        // Find and update the word in the list
-                        final index = _displayedWords.indexWhere(
-                          (w) => w.id == word.id,
-                        );
-                        if (index != -1) {
-                          _displayedWords[index] = _displayedWords[index]
-                              .copyWith(isFavorite: !word.isFavorite);
+                        // Update local state without reloading
+                        if (mounted) {
+                          setState(() {
+                            // Find and update the word in the list
+                            final index = _displayedWords.indexWhere(
+                              (w) => w.id == word.id,
+                            );
+                            if (index != -1) {
+                              _displayedWords[index] = _displayedWords[index]
+                                  .copyWith(isFavorite: !word.isFavorite);
+                            }
+                          });
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                word.isFavorite
+                                    ? 'Favorilerden çıkarıldı'
+                                    : 'Favorilere eklendi',
+                              ),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
                         }
-                      });
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            word.isFavorite
-                                ? 'Favorilerden çıkarıldı'
-                                : 'Favorilere eklendi',
-                          ),
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Hata: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-              ),
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Hata: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
+          ),
+        ),
+        ConfettiWidget(
+          confettiController: _confettiController,
+          blastDirectionality: BlastDirectionality.explosive,
+          shouldLoop: false,
+          colors: const [
+            Colors.green,
+            Colors.blue,
+            Colors.pink,
+            Colors.orange,
+            Colors.purple,
           ],
         ),
-      ),
+      ],
     );
   }
 

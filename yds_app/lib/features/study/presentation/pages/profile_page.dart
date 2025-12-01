@@ -13,6 +13,13 @@ import '../../../gamification/presentation/providers/gamification_provider.dart'
 import '../../../gamification/presentation/pages/leaderboard_page.dart';
 import 'statistics_page.dart';
 import 'word_list_page.dart';
+import '../../../../core/services/notification_service.dart';
+
+// Simple providers for notification state (should be moved to a proper controller later)
+final notificationEnabledProvider = StateProvider<bool>((ref) => false);
+final notificationTimeProvider = StateProvider<TimeOfDay>(
+  (ref) => const TimeOfDay(hour: 19, minute: 0),
+);
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -289,12 +296,104 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  _buildNotificationSettings(context, ref),
                 ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildNotificationSettings(BuildContext context, WidgetRef ref) {
+    return Consumer(
+      builder: (context, ref, _) {
+        // Simple state management for demo purposes
+        // In a real app, this should be in a provider/controller
+        final areNotificationsEnabled = ref.watch(notificationEnabledProvider);
+        final notificationTime = ref.watch(notificationTimeProvider);
+
+        return Column(
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.notifications,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Günlük Hatırlatıcı',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+                Switch(
+                  value: areNotificationsEnabled,
+                  onChanged: (value) async {
+                    ref.read(notificationEnabledProvider.notifier).state =
+                        value;
+                    if (value) {
+                      final granted = await NotificationService()
+                          .requestPermissions();
+                      if (granted == true) {
+                        await NotificationService().scheduleDailyReminder(
+                          notificationTime,
+                        );
+                      } else {
+                        ref.read(notificationEnabledProvider.notifier).state =
+                            false;
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Bildirim izni verilmedi'),
+                            ),
+                          );
+                        }
+                      }
+                    } else {
+                      await NotificationService().cancelAll();
+                    }
+                  },
+                ),
+              ],
+            ),
+            if (areNotificationsEnabled) ...[
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  final TimeOfDay? picked = await showTimePicker(
+                    context: context,
+                    initialTime: notificationTime,
+                  );
+                  if (picked != null) {
+                    ref.read(notificationTimeProvider.notifier).state = picked;
+                    await NotificationService().scheduleDailyReminder(picked);
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 40, top: 8, bottom: 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Saat: ${notificationTime.format(context)}',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.edit, size: 16, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 
