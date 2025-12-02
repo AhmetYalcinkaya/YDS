@@ -20,29 +20,13 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
-    // Try to load signing configuration from key.properties
-    val keyPropertiesFile = File(rootDir, "android/key.properties")
-    val signingPropsMap = mutableMapOf<String, String>()
-    
-    if (keyPropertiesFile.exists()) {
-        keyPropertiesFile.forEachLine { line ->
-            if (line.isNotBlank() && !line.startsWith("#")) {
-                val parts = line.split("=", limit = 2)
-                if (parts.size == 2) {
-                    signingPropsMap[parts[0].trim()] = parts[1].trim()
-                }
-            }
-        }
-    }
-
+    // Signing configuration for release
     signingConfigs {
         create("release") {
-            keyAlias = signingPropsMap["keyAlias"] ?: ""
-            keyPassword = signingPropsMap["keyPassword"] ?: ""
-            storeFile = signingPropsMap["storeFile"]?.let { 
-                file(it) 
-            }
-            storePassword = signingPropsMap["storePassword"] ?: ""
+            keyAlias = "yds_key"
+            keyPassword = "yds@2024secure"
+            storeFile = file("${rootDir}/yds-release-key.jks")
+            storePassword = "yds@2024secure"
         }
     }
 
@@ -63,13 +47,7 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
         release {
-            // Use release signing config if key.properties is properly configured
-            // Otherwise, fall back to debug for testing
-            signingConfig = if (signingPropsMap["storeFile"] != null) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
