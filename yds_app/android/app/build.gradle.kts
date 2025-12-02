@@ -25,7 +25,7 @@ android {
         create("release") {
             keyAlias = "yds_key"
             keyPassword = "yds@2024secure"
-            storeFile = file("${rootDir}/yds-release-key.jks")
+            storeFile = file("${rootDir}/../yds-release-key.jks")
             storePassword = "yds@2024secure"
         }
     }
